@@ -1,0 +1,12 @@
+# Python environment
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# Environment variables (for later)
+.env
+
+# Local Media (Since we use Cloudinary now!)
+media/

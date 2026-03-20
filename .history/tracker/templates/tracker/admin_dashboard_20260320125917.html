@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+    <h1 style="color: #333; margin-bottom: 20px;">Roots Group - Live Overview</h1>
+    
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px;">
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 220px; border-top: 5px solid #27ae60;">
+            <h4 style="margin: 0; color: #7f8c8d; font-weight: normal; font-size: 14px;">Total Dues Collected</h4>
+            <h2 style="margin: 10px 0 0 0; color: #2c3e50; font-size: 32px;">${{ total_approved }}</h2>
+        </div>
+
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 220px; border-top: 5px solid #f39c12;">
+            <h4 style="margin: 0; color: #7f8c8d; font-weight: normal; font-size: 14px;">Receipts Pending Verification</h4>
+            <h2 style="margin: 10px 0 0 0; color: #2c3e50; font-size: 32px;">{{ pending_count }}</h2>
+            {% if pending_count > 0 %}
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #e67e22;">Requires admin action</p>
+            {% endif %}
+        </div>
+
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 220px; border-top: 5px solid #8e44ad;">
+            <h4 style="margin: 0; color: #7f8c8d; font-weight: normal; font-size: 14px;">Total Roots Members</h4>
+            <h2 style="margin: 10px 0 0 0; color: #2c3e50; font-size: 32px;">{{ member_count }}</h2>
+        </div>
+        
+    </div>
+
+    <h2 style="color: #333; margin-bottom: 15px;">Quick Actions</h2>
+    <div style="display: flex; gap: 15px;">
+        <a href="{% url 'admin:tracker_payment_changelist' %}?status__exact=pending" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Receipts</a>
+        <a href="{% url 'admin:tracker_member_changelist' %}" style="background-color: #ecf0f1; color: #2c3e50; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; border: 1px solid #bdc3c7;">View Member Database</a>
+    </div>
+
+</div>
+{% endblock %}

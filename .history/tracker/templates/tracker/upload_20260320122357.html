@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roots - Receipt Upload</title>
+  </head>
+ <body style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
+
+    <div style="text-align: right; margin-bottom: 15px;">
+        <a href="/admin" style="color: #3498db; text-decoration: none; font-size: 14px; background-color: #f1f1f1; padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd;">
+            Go to Admin Portal
+        </a>
+    </div>
+
+    <h2 style="color: #2c3e50">Roots Monthly Dues</h2>
+    <p>Please select your name and upload your $10 monthly receipt below.</p>
+
+    
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %} {{ form.as_p }}
+
+      <button
+        type="submit"
+        style="
+          background-color: #27ae60;
+          color: white;
+          padding: 12px 20px;
+          border: none;
+          border-radius: 5px;
+          width: 100%;
+          font-size: 16px;
+        "
+      >
+        Upload Receipt
+      </button>
+    </form>
+  </body>
+</html>

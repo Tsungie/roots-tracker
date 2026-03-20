@@ -1,0 +1,15 @@
+# Python environment
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# Environment variables (for later)
+.env
+
+# Local Database
+db.sqlite3
+
+# Local Media (Since we use Cloudinary now!)
+media/
