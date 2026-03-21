@@ -19,17 +19,18 @@ class Member(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
-    
+
     @property
     def total_approved_payments(self):
         # Grabs all 'approved' payments for this member and sums the amount
-        approved = self.payments.filter(status='approved')
+        approved = self.payments.filter(status="approved")
         return sum(p.amount for p in approved)
 
     @property
     def total_attendance(self):
         # Counts how many times they attended (either physical or online)
-        return self.attendance_records.filter(mode__in=['physical', 'online']).count()
+        return self.attendance_records.filter(mode__in=["physical", "online"]).count()
+
 
 class Meeting(models.Model):
     date = models.DateField(default=timezone.now)
@@ -40,7 +41,7 @@ class Meeting(models.Model):
         ordering = ["-date"]
 
     def __str__(self):
-        return f"Roots Meeting - {self.topic}"
+        return f"{self.topic} - {self.date}"
 
 
 class Attendance(models.Model):
@@ -126,5 +127,3 @@ class Payment(models.Model):
             self.receipt_hash = hasher.hexdigest()
 
         super().save(*args, **kwargs)
-
-
