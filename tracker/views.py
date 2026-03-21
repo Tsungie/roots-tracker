@@ -121,7 +121,7 @@ def whatsapp_webhook(request):
         challenge = request.GET.get("hub.challenge")
 
         # We will set this secret password in our .env file next!
-        VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
+        VERIFY_TOKEN = "Password@1"
 
         if mode == "subscribe" and token == VERIFY_TOKEN:
             print("✅ Webhook verified by Meta!")
