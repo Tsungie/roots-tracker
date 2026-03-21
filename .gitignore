@@ -8,6 +8,7 @@ env/
 
 # Environment variables (for later)
 .env
+.history/
 
 # Local Media (Since we use Cloudinary now!)
 media/
