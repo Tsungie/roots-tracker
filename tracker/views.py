@@ -4,6 +4,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import io
+import requests
 from .models import Member, Meeting, Attendance
 import json
 import os
@@ -112,33 +113,49 @@ def download_master_summary(request):
     return response
 
 
+
 @csrf_exempt
 def whatsapp_webhook(request):
-    # 1. THE HANDSHAKE (Meta verifying your server)
+    # 1. THE HANDSHAKE
     if request.method == "GET":
         mode = request.GET.get("hub.mode")
         token = request.GET.get("hub.verify_token")
         challenge = request.GET.get("hub.challenge")
 
-        # We will set this secret password in our .env file next!
-        VERIFY_TOKEN = "Password@1"
+        # Back to the secure hidden password!
+        VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
 
         if mode == "subscribe" and token == VERIFY_TOKEN:
-            print("✅ Webhook verified by Meta!")
             return HttpResponse(challenge, status=200)
         else:
             return HttpResponse("Forbidden", status=403)
 
-    # 2. THE INBOX (Receiving actual WhatsApp messages)
+    # 2. THE INBOX & AUTO-REPLY
     elif request.method == "POST":
         try:
             body = json.loads(request.body)
 
-            # Print the incoming message to your terminal so we can see it!
-            print("📩 NEW WHATSAPP MESSAGE RECEIVED:")
-            print(json.dumps(body, indent=2))
+            # Check if this is an actual WhatsApp message
+            if "object" in body and body["object"] == "whatsapp_business_account":
+                entry = body.get("entry", [{}])[0]
+                changes = entry.get("changes", [{}])[0]
+                value = changes.get("value", {})
 
-            # Always return a 200 OK so Meta knows we got it
+                # If there is a message, extract the text and phone number!
+                if "messages" in value:
+                    message = value["messages"][0]
+                    sender_phone = message["from"]
+
+                    # Sometimes people send images/audio, so we default to "" if it's not text
+                    incoming_text = message.get("text", {}).get(
+                        "body", "Media received!"
+                    )
+
+                    print(f"📩 Received '{incoming_text}' from {sender_phone}")
+
+                    # Fire off the auto-reply!
+                    send_whatsapp_reply(sender_phone, incoming_text)
+
             return HttpResponse("EVENT_RECEIVED", status=200)
 
         except Exception as e:
@@ -146,3 +163,29 @@ def whatsapp_webhook(request):
             return HttpResponse(status=400)
 
     return HttpResponse("Method not allowed", status=405)
+
+
+# 3. THE OUTBOX (Sending a custom text message back)
+def send_whatsapp_reply(recipient_phone, received_text):
+    ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
+    PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+
+    url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
+
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+
+    # Let's dynamically include what they said in our reply!
+    reply_text = f"Roots has received your message: '{received_text}'. Your bot is officially live!"
+
+    # Notice the type is "text" now, not "template"!
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": recipient_phone,
+        "type": "text",
+        "text": {"body": reply_text},
+    }
+
+    requests.post(url, headers=headers, json=payload)
