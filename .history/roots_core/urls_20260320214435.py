@@ -8,6 +8,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", views.upload_receipt, name="upload_receipt"),  # The main upload link
     path("success/", views.upload_success, name="upload_success"),
-    path("whatsapp/webhook/", views.whatsapp_webhook, name="whatsapp_webhook"),
-    path("download-master/", views.download_master_summary, name="download_master"),
+    
+    path('download-master/', views.download_master_summary, name='download_master'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

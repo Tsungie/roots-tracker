@@ -5,10 +5,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import io
 from .models import Member, Meeting, Attendance
-import json
-import os
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+
 
 
 def upload_receipt(request):
@@ -110,39 +107,3 @@ def download_master_summary(request):
     response.write(pdf)
 
     return response
-
-
-@csrf_exempt
-def whatsapp_webhook(request):
-    # 1. THE HANDSHAKE (Meta verifying your server)
-    if request.method == "GET":
-        mode = request.GET.get("hub.mode")
-        token = request.GET.get("hub.verify_token")
-        challenge = request.GET.get("hub.challenge")
-
-        # We will set this secret password in our .env file next!
-        VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
-
-        if mode == "subscribe" and token == VERIFY_TOKEN:
-            print("✅ Webhook verified by Meta!")
-            return HttpResponse(challenge, status=200)
-        else:
-            return HttpResponse("Forbidden", status=403)
-
-    # 2. THE INBOX (Receiving actual WhatsApp messages)
-    elif request.method == "POST":
-        try:
-            body = json.loads(request.body)
-
-            # Print the incoming message to your terminal so we can see it!
-            print("📩 NEW WHATSAPP MESSAGE RECEIVED:")
-            print(json.dumps(body, indent=2))
-
-            # Always return a 200 OK so Meta knows we got it
-            return HttpResponse("EVENT_RECEIVED", status=200)
-
-        except Exception as e:
-            print(f"❌ Error processing message: {e}")
-            return HttpResponse(status=400)
-
-    return HttpResponse("Method not allowed", status=405)
