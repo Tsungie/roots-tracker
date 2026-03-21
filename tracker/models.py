@@ -40,7 +40,7 @@ class Meeting(models.Model):
         ordering = ["-date"]
 
     def __str__(self):
-        return f"Roots Meeting - {self.date}"
+        return f"Roots Meeting - {self.topic}"
 
 
 class Attendance(models.Model):
