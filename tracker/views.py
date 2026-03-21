@@ -113,7 +113,6 @@ def download_master_summary(request):
     return response
 
 
-
 @csrf_exempt
 def whatsapp_webhook(request):
     # 1. THE HANDSHAKE
@@ -166,9 +165,13 @@ def whatsapp_webhook(request):
 
 
 # 3. THE OUTBOX (Sending a custom text message back)
+# 3. THE OUTBOX (Sending a custom text message back)
 def send_whatsapp_reply(recipient_phone, received_text):
     ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
     PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+
+    # DEBUG 1: Let's make sure your server can actually see the keys!
+    print(f"🔑 DEBUG KEY CHECK - Phone ID: {PHONE_NUMBER_ID}")
 
     url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
 
@@ -177,10 +180,8 @@ def send_whatsapp_reply(recipient_phone, received_text):
         "Content-Type": "application/json",
     }
 
-    # Let's dynamically include what they said in our reply!
     reply_text = f"Roots has received your message: '{received_text}'. Your bot is officially live!"
 
-    # Notice the type is "text" now, not "template"!
     payload = {
         "messaging_product": "whatsapp",
         "to": recipient_phone,
@@ -188,4 +189,9 @@ def send_whatsapp_reply(recipient_phone, received_text):
         "text": {"body": reply_text},
     }
 
-    requests.post(url, headers=headers, json=payload)
+    # DEBUG 2: Capture Meta's exact response and print it to the logs
+    print(f"🚀 Firing message to {recipient_phone}...")
+    response = requests.post(url, headers=headers, json=payload)
+
+    print(f"📤 META API RESPONSE CODE: {response.status_code}")
+    print(f"📝 META API DETAILS: {response.text}")
