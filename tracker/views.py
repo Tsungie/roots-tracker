@@ -288,6 +288,7 @@ def send_receipt_confirmation_button(recipient_phone):
     print(f"🔘 Sending interactive buttons to {recipient_phone}...")
     requests.post(url, headers=headers, json=payload)
 # 5. THE LIST MENU (Asking for the Month)
+# 5. THE LIST MENU (Asking for the Month)
 def send_month_selection_list(recipient_phone):
     ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
     PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
@@ -299,7 +300,7 @@ def send_month_selection_list(recipient_phone):
         "Content-Type": "application/json",
     }
 
-    # We create a list of all 12 months
+    # WHATSAPP LIMIT: Only 10 rows allowed per list! (We'll use Jan - Oct for now)
     month_rows = [
         {"id": "month_jan", "title": "January"},
         {"id": "month_feb", "title": "February"},
@@ -311,8 +312,6 @@ def send_month_selection_list(recipient_phone):
         {"id": "month_aug", "title": "August"},
         {"id": "month_sep", "title": "September"},
         {"id": "month_oct", "title": "October"},
-        {"id": "month_nov", "title": "November"},
-        {"id": "month_dec", "title": "December"},
     ]
 
     payload = {
@@ -325,11 +324,15 @@ def send_month_selection_list(recipient_phone):
             "body": {"text": "Perfect! Which month is this $10 receipt paying for?"},
             "footer": {"text": "Roots Command Center"},
             "action": {
-                "button": "Tap to Select Month",
+                "button": "Tap to Select",
                 "sections": [{"title": "2026 Months", "rows": month_rows}],
             },
         },
     }
 
     print(f"📋 Sending month list menu to {recipient_phone}...")
-    requests.post(url, headers=headers, json=payload)
+    response = requests.post(url, headers=headers, json=payload)
+
+    # DEBUG: Let's catch any Meta errors so we aren't blind!
+    print(f"📤 LIST MENU RESPONSE CODE: {response.status_code}")
+    print(f"📝 LIST MENU DETAILS: {response.text}")
