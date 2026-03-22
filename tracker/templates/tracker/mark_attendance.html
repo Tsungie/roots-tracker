@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mark Attendance | Roots</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #8e44ad; color: white; }
+        .save-btn { background: #27ae60; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>📝 Attendance: {{ active_group.name }}</h1>
+    
+    <form method="POST">
+        {% csrf_token %}
+        <label>Meeting Date:</label>
+        <input type="date" name="meeting_date" value="{{ today }}" required>
+        <label>Topic:</label>
+        <input type="text" name="topic" placeholder="e.g., Cause and Effect">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Member Name</th>
+                    <th>Status</th>
+                    <th>Comments</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                <tr>
+                    <td>{{ member.first_name }} {{ member.last_name }}</td>
+                    <td>
+                        <select name="mode_{{ member.id }}">
+                            <option value="physical">Physical</option>
+                            <option value="online">Online</option>
+                            <option value="absent">Absent</option>
+                        </select>
+                    </td>
+                    <td><input type="text" name="comment_{{ member.id }}" placeholder="Why absent?"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="save-btn">✅ Save All Attendance Records</button>
+    </form>
+</body>
+</html>

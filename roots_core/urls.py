@@ -16,4 +16,5 @@ urlpatterns = [
     # 4. Reports & Webhooks
     path("download-summary/", views.download_master_summary, name="download_summary"),
     path("whatsapp/webhook/", views.whatsapp_webhook, name="whatsapp_webhook"),
+    path("attendance/", views.mark_attendance, name="mark_attendance"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

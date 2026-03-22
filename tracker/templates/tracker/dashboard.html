@@ -1,26 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Roots</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 40px; }
-        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .header { color: #8e44ad; }
-        .nav-btn { background: #3498db; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn-group { margin-bottom: 20px; }
+        .nav-btn { padding: 10px 15px; text-decoration: none; border-radius: 5px; color: white; font-weight: bold; margin-right: 10px; }
+        canvas { max-height: 300px; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1 class="header">📊 Dashboard: {{ active_group.name }}</h1>
-        <p>Welcome to the command center. All records below are filtered strictly for this workspace.</p>
+        <h1>📊 {{ active_group.name }} Command Center</h1>
         
-        <br>
-        <a href="{% url 'select_group' %}" class="nav-btn">🔙 Switch Group</a>
-        <a href="{% url 'upload_receipt' %}" class="nav-btn" style="background: #2ecc71;">📸 Upload Bulk Receipts</a>
+        <div class="btn-group">
+            <a href="{% url 'mark_attendance' %}" class="nav-btn" style="background: #f39c12;">📝 Mark Attendance</a>
+            <a href="{% url 'upload_receipt' %}" class="nav-btn" style="background: #27ae60;">💰 Bulk Payments</a>
+            <a href="{% url 'select_group' %}" class="nav-btn" style="background: #95a5a6;">🔄 Switch Group</a>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>💳 Payment Status (Current Month)</h3>
+                <canvas id="paymentChart"></canvas>
+            </div>
+
+            <div class="card">
+                <h3>📈 Attendance (Last 5 Meetings)</h3>
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
     </div>
 
+    <script>
+        // Payment Pie Chart
+        new Chart(document.getElementById('paymentChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Paid', 'Unpaid'],
+                datasets: [{
+                    data: [{{ paid_count }}, {{ unpaid_count }}],
+                    backgroundColor: ['#2ecc71', '#e74c3c']
+                }]
+            }
+        });
+
+        // Attendance Bar Chart
+        new Chart(document.getElementById('attendanceChart'), {
+            type: 'bar',
+            data: {
+                labels: {{ meeting_labels|safe }},
+                datasets: [{
+                    label: 'Attended',
+                    data: {{ attendance_counts|safe }},
+                    backgroundColor: '#3498db'
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    </script>
 </body>
 </html>

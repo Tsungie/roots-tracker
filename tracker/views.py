@@ -14,6 +14,9 @@ import json
 import os
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Count
+from django.utils import timezone
+
 #
 
 def upload_receipt(request):
@@ -39,6 +42,48 @@ def upload_receipt(request):
 
 def upload_success(request):
     return render(request, "tracker/success.html")
+
+
+def mark_attendance(request):
+    group_id = request.session.get("active_group_id")
+    if not group_id:
+        return redirect("select_group")
+
+    active_group = Group.objects.get(id=group_id)
+    members = Member.objects.filter(group=active_group)
+
+    # If saving the attendance...
+    if request.method == "POST":
+        meeting_date = request.POST.get("meeting_date")
+        topic = request.POST.get("topic")
+
+        # 1. Create the Meeting object
+        meeting, created = Meeting.objects.get_or_create(
+            group=active_group, date=meeting_date, defaults={"topic": topic}
+        )
+
+        # 2. Loop through every member and save their status
+        for member in members:
+            mode = request.POST.get(f"mode_{member.id}")
+            comment = request.POST.get(f"comment_{member.id}")
+
+            Attendance.objects.update_or_create(
+                meeting=meeting,
+                member=member,
+                defaults={"mode": mode, "comments": comment},
+            )
+
+        return redirect("dashboard")
+
+    return render(
+        request,
+        "tracker/mark_attendance.html",
+        {
+            "active_group": active_group,
+            "members": members,
+            "today": timezone.now().date().isoformat(),
+        },
+    )
 
 
 def download_master_summary(request):
@@ -296,19 +341,57 @@ def select_group(request):
     return render(request, "tracker/select_group.html", {"groups": groups})
 
 
-def dashboard(request):
-    # 1. Read the "sticky note" from the session
-    group_id = request.session.get("active_group_id")
 
-    # 2. If they somehow bypassed the lobby, kick them back to the front desk!
+
+def dashboard(request):
+    group_id = request.session.get("active_group_id")
     if not group_id:
         return redirect("select_group")
 
-    # 3. Grab the specific group from the database
-    active_group = Group.objects.filter(id=group_id).first()
+    active_group = Group.objects.prefetch_related("members", "meetings").get(
+        id=group_id
+    )
 
-    # 4. Render the new dashboard page
-    return render(request, "tracker/dashboard.html", {"active_group": active_group})
+    # 1. Payment Data (Current Month)
+    current_month = timezone.now().month
+    current_year = timezone.now().year
+
+    total_members = active_group.members.filter(is_exempt_from_paying=False).count()
+    paid_count = (
+        Payment.objects.filter(
+            member__group=active_group,
+            month=current_month,
+            year=current_year,
+            status="approved",
+        )
+        .values("member")
+        .distinct()
+        .count()
+    )
+
+    unpaid_count = max(0, total_members - paid_count)
+
+    # 2. Attendance Data (Last 5 Meetings)
+    last_5_meetings = Meeting.objects.filter(group=active_group).order_by("-date")[:5][
+        ::-1
+    ]
+    meeting_labels = [m.date.strftime("%b %d") for m in last_5_meetings]
+    attendance_counts = [
+        m.attendees.filter(mode__in=["physical", "online"]).count()
+        for m in last_5_meetings
+    ]
+
+    return render(
+        request,
+        "tracker/dashboard.html",
+        {
+            "active_group": active_group,
+            "paid_count": paid_count,
+            "unpaid_count": unpaid_count,
+            "meeting_labels": json.dumps(meeting_labels),
+            "attendance_counts": json.dumps(attendance_counts),
+        },
+    )
 
 
 # 3. THE OUTBOX (Sending a custom text message back)
