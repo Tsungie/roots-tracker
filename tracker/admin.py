@@ -1,12 +1,5 @@
 from django.contrib import admin
-from .models import (
-    Group,
-    Member,
-    Meeting,
-    Attendance,
-    Payment,
-    WhatsAppDraft,
-    Topic)
+from .models import Group, Member, Meeting, Attendance, Payment, WhatsAppDraft, Topic
 from django.http import HttpResponse
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -146,7 +139,6 @@ admin.site.register(Attendance)
 admin.site.register(Group)
 admin.site.register(Member)
 admin.site.register(Meeting)
-admin.site.register(Attendance)
 admin.site.register(Payment)
 admin.site.register(WhatsAppDraft)
 
