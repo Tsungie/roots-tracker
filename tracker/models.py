@@ -127,3 +127,18 @@ class Payment(models.Model):
             self.receipt_hash = hasher.hexdigest()
 
         super().save(*args, **kwargs)
+
+        class WhatsAppDraft(models.Model):
+            # We use unique=True so a user only ever has one active draft at a time
+            phone_number = models.CharField(max_length=20, unique=True)
+            
+            # These fields can be blank initially, and we fill them in step-by-step
+            image_id = models.CharField(max_length=255, null=True, blank=True)
+            month = models.CharField(max_length=50, null=True, blank=True)
+            payment_mode = models.CharField(max_length=50, null=True, blank=True)
+            
+            # A timestamp just in case we ever want to clear out old, abandoned drafts
+            last_updated = models.DateTimeField(auto_now=True)
+
+            def __str__(self):
+                return f"Draft for {self.phone_number}"
