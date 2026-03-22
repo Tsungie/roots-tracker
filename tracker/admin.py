@@ -1,4 +1,12 @@
 from django.contrib import admin
+from .models import (
+    Group,
+    Member,
+    Meeting,
+    Attendance,
+    Payment,
+    WhatsAppDraft,
+    Topic)
 from django.http import HttpResponse
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -13,6 +21,13 @@ from .models import Member, Meeting, Attendance, Payment
 # ==========================================
 # 1. THE PDF GENERATOR SCRIPTS (ACTIONS)
 # ==========================================
+
+
+@admin.register(Topic)
+class TopicAdmin(admin.ModelAdmin):
+    list_display = ("title", "group", "order")
+    list_filter = ("group",)
+    ordering = ("group", "order")
 
 
 @admin.action(description="Download PDF Report for selected payments")
@@ -128,6 +143,12 @@ def export_member_summary_pdf(modeladmin, request, queryset):
 
 admin.site.register(Meeting)
 admin.site.register(Attendance)
+admin.site.register(Group)
+admin.site.register(Member)
+admin.site.register(Meeting)
+admin.site.register(Attendance)
+admin.site.register(Payment)
+admin.site.register(WhatsAppDraft)
 
 
 # ==========================================
