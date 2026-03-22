@@ -1,4 +1,6 @@
 from django.http import HttpResponse
+from django.shortcuts import render, redirect
+from django.db import IntegrityError
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
@@ -11,7 +13,7 @@ import json
 import os
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-# 
+#
 
 def upload_receipt(request):
     error_message = None  # Set a blank error message initially
