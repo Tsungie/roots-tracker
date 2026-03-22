@@ -118,10 +118,16 @@ def download_master_summary(request):
 
 @csrf_exempt
 def whatsapp_webhook(request):
-    # 1. THE HANDSHAKE (LEAVE THIS ALONE!)
+    
+    # 1. THE HANDSHAKE
     if request.method == "GET":
         mode = request.GET.get("hub.mode")
-        # ... (all your handshake code stays exactly the same) ...
+        token = request.GET.get("hub.verify_token")
+        challenge = request.GET.get("hub.challenge")
+
+        if mode == "subscribe" and token == "roots_secure_token_2026":
+            return HttpResponse(challenge, status=200)
+        return HttpResponse("error", status=403)
 
     # 2. THE INBOX & ROUTING
     elif request.method == "POST":
