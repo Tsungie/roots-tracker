@@ -141,9 +141,7 @@ def whatsapp_webhook(request):
                         print(
                             f"📩 Received TEXT: '{incoming_text}' from {sender_phone}"
                         )
-                        send_whatsapp_reply(
-                            sender_phone, f"Roots got your text: '{incoming_text}'"
-                        )
+                        send_whatsapp_reply(sender_phone, incoming_text)
 
                     # Route B: It's an image! (Likely a receipt)
                     elif message_type == "image":
@@ -151,13 +149,28 @@ def whatsapp_webhook(request):
                         print(
                             f"📸 Received IMAGE with ID: {image_id} from {sender_phone}"
                         )
-
-                        # 1. Ask the user if it's a receipt! (Using our new buttons)
                         send_receipt_confirmation_button(sender_phone)
-
-                        # 2. Go ahead and download it in the background just in case
                         download_whatsapp_media(image_id)
 
+                    # Route C: It's an interactive button click!
+                    elif message_type == "interactive":
+                        button_reply = message["interactive"].get("button_reply", {})
+                        button_id = button_reply.get("id")
+                        print(
+                            f"🔘 User clicked button ID: {button_id} from {sender_phone}"
+                        )
+
+                        if button_id == "btn_yes_receipt":
+                            send_whatsapp_reply(
+                                sender_phone,
+                                "Perfect! 📝 Now, which month are you paying for? (I will give you a list of months to pick from in our next update!)",
+                            )
+
+                        elif button_id == "btn_no_receipt":
+                            send_whatsapp_reply(
+                                sender_phone,
+                                "No problem! I will toss that photo in the trash and pretend I didn't see it. 🗑️",
+                            )
             return HttpResponse("EVENT_RECEIVED", status=200)
 
         except Exception as e:
