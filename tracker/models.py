@@ -129,18 +129,6 @@ class Payment(models.Model):
         super().save(*args, **kwargs)
 
 
-def save(self, *args, **kwargs):
-    # Only calculate the hash if there is an image and it hasn't been hashed yet
-    if self.receipt_image and not self.receipt_hash:
-        hasher = hashlib.sha256()
-        for chunk in self.receipt_image.chunks():
-            hasher.update(chunk)
-        self.receipt_hash = hasher.hexdigest()
-
-    super().save(*args, **kwargs)
-
-
-
 class WhatsAppDraft(models.Model):
     # We use unique=True so a user only ever has one active draft at a time
     phone_number = models.CharField(max_length=20, unique=True)
