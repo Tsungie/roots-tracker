@@ -70,7 +70,7 @@ class Meeting(models.Model):
     )
 
     date = models.DateField(default=timezone.now)
-    topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
+    # topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
 
     class Meta:
