@@ -145,16 +145,17 @@ def whatsapp_webhook(request):
                             sender_phone, f"Roots got your text: '{incoming_text}'"
                         )
 
-                    # Route B: <--- THIS IS THE ONLY PART YOU CHANGE!
+                    # Route B: It's an image! (Likely a receipt)
                     elif message_type == "image":
                         image_id = message["image"]["id"]
                         print(
                             f"📸 Received IMAGE with ID: {image_id} from {sender_phone}"
                         )
-                        send_whatsapp_reply(
-                            sender_phone,
-                            "Awesome! I am downloading your receipt right now...",
-                        )
+
+                        # 1. Ask the user if it's a receipt! (Using our new buttons)
+                        send_receipt_confirmation_button(sender_phone)
+
+                        # 2. Go ahead and download it in the background just in case
                         download_whatsapp_media(image_id)
 
             return HttpResponse("EVENT_RECEIVED", status=200)
@@ -225,8 +226,51 @@ def download_whatsapp_media(media_id):
         with open(filename, "wb") as f:
             f.write(image_response.content)
 
+
         print(f"🎉 SUCCESS! Image downloaded and saved as {filename}")
         return filename
     else:
         print(f"❌ Failed to download image. Status: {image_response.status_code}")
         return None
+# 4. THE INTERACTIVE MENU (Asking Yes/No)
+def send_receipt_confirmation_button(recipient_phone):
+    ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
+    PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+
+    url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
+
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+
+    # The special payload for Interactive Buttons
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": recipient_phone,
+        "type": "interactive",
+        "interactive": {
+            "type": "button",
+            "body": {
+                "text": "I just received an image! 📸\n\nIs this a Roots monthly payment receipt?"
+            },
+            "action": {
+                "buttons": [
+                    {
+                        "type": "reply",
+                        "reply": {"id": "btn_yes_receipt", "title": "✅ Yes, it is"},
+                    },
+                    {
+                        "type": "reply",
+                        "reply": {
+                            "id": "btn_no_receipt",
+                            "title": "❌ No, just a photo",
+                        },
+                    },
+                ]
+            },
+        },
+    }
+
+    print(f"🔘 Sending interactive buttons to {recipient_phone}...")
+    requests.post(url, headers=headers, json=payload)
