@@ -3,12 +3,32 @@ from django.db import models
 from django.utils import timezone
 
 
+class Group(models.Model):
+    name = models.CharField(
+        max_length=100, unique=True, help_text="e.g., Planted 2026 CCWP05"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Member(models.Model):
     ROLE_CHOICES = [
         ("admin", "Admin"),
         ("member", "Member"),
     ]
 
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, related_name="members", null=True
+    )
+
+    # 👉 NEW: Supervisor exemption and Birthday
+    is_exempt_from_paying = models.BooleanField(
+        default=False,
+        help_text="Check this for supervisors like Sis Trudy so they don't show as owing money.",
+    )
+    date_of_birth = models.DateField(blank=True, null=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     phone_number = models.CharField(
@@ -33,6 +53,10 @@ class Member(models.Model):
 
 
 class Meeting(models.Model):
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, related_name="meetings", null=True
+    )
+
     date = models.DateField(default=timezone.now)
     topic = models.CharField(max_length=200, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
@@ -50,6 +74,12 @@ class Attendance(models.Model):
         ("online", "Online"),
         ("absent", "Absent"),
     ]
+    comments = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Why were they absent? Any payment notes?",
+    )
 
     meeting = models.ForeignKey(
         Meeting, on_delete=models.CASCADE, related_name="attendees"
