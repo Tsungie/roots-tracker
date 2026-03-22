@@ -162,7 +162,7 @@ def whatsapp_webhook(request):
 
                         if button_id == "btn_yes_receipt":
                             # Send them the popup list of months!
-                            send_month_selection_list(sender_phone),
+                            send_month_selection_list(sender_phone)
                             
 
                         elif button_id == "btn_no_receipt":
