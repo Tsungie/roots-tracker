@@ -7,7 +7,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import io
 import requests
-from .models import Member, Meeting, Attendance, WhatsAppDraft, Payment
+from .models import Member, Meeting, Attendance, WhatsAppDraft, Payment, Group
 from django.core.files import File
 from .forms import ReceiptUploadForm
 import json
@@ -119,7 +119,7 @@ def download_master_summary(request):
 
 @csrf_exempt
 def whatsapp_webhook(request):
-    
+
     # 1. THE HANDSHAKE
     if request.method == "GET":
         mode = request.GET.get("hub.mode")
@@ -196,10 +196,10 @@ def whatsapp_webhook(request):
                                 )
 
                             # 🧠 MEMORY STEP 3: The final click! Catch the Payment Mode.
-                       # 🧠 MEMORY STEP 3: The final click! Catch the Payment Mode & Submit to Database.
+                            # 🧠 MEMORY STEP 3: The final click! Catch the Payment Mode & Submit to Database.
                             elif button_id in ["btn_pay_cash", "btn_pay_bank", "btn_pay_mobile"]:
                                 draft = WhatsAppDraft.objects.filter(phone_number=sender_phone).first()
-                                
+
                                 if draft:
                                     # 1. Translate the Payment Mode
                                     if button_id == "btn_pay_cash":
@@ -211,7 +211,7 @@ def whatsapp_webhook(request):
                                     elif button_id == "btn_pay_mobile":
                                         draft.payment_mode = "Mobile Money"
                                         db_method = "ecocash"
-                                        
+
                                     # 2. Translate the Month string to a number (e.g., "March" -> 3)
                                     month_map = {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6, "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12}
                                     db_month = month_map.get(draft.month, 1)
@@ -229,18 +229,18 @@ def whatsapp_webhook(request):
                                                 payment_method=db_method,
                                                 status="pending"
                                             )
-                                            
+
                                             # 5. Grab the image we downloaded in Route B and attach it
                                             filename = f"whatsapp_receipt_{draft.image_id}.jpg"
                                             if os.path.exists(filename):
                                                 with open(filename, 'rb') as f:
                                                     new_payment.receipt_image.save(filename, File(f), save=False)
-                                            
+
                                             new_payment.save() # Saves to database AND uploads to Cloudinary!
-                                            
+
                                             # 6. Success! Send the Boom message.
                                             send_whatsapp_reply(sender_phone, f"Boom! 💥 Your $10 {draft.payment_mode} payment receipt for {draft.month} has been successfully submitted to the Roots Command Center for approval. Thank you!")
-                                            
+
                                             # 7. Clean up: Delete the local image file and wipe the clipboard
                                             if os.path.exists(filename):
                                                 os.remove(filename)
@@ -282,6 +282,20 @@ def whatsapp_webhook(request):
             return HttpResponse(status=400)
 
     return HttpResponse("Method not allowed", status=405)
+
+
+def select_group(request):
+    # 1. If they just clicked a group button, save the "sticky note" and let them in!
+    if request.method == "POST":
+        group_id = request.POST.get("group_id")
+        request.session["active_group_id"] = group_id
+        return redirect(
+            "upload_receipt"
+        )  # We will redirect this to a real Dashboard soon!
+
+    # 2. If they are just arriving, show them all the available groups
+    groups = Group.objects.all()
+    return render(request, "tracker/select_group.html", {"groups": groups})
 
 
 # 3. THE OUTBOX (Sending a custom text message back)
