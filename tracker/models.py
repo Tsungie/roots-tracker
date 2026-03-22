@@ -52,13 +52,27 @@ class Member(models.Model):
         return self.attendance_records.filter(mode__in=["physical", "online"]).count()
 
 
+class Topic(models.Model):
+    group = models.ForeignKey(
+        Group, on_relative_name="topics", on_delete=models.CASCADE
+    )
+    title = models.CharField(max_length=200)  # e.g., "L1: Cause & Effect"
+    order = models.PositiveIntegerField(default=1)  # To keep them in L1, L2, L3 order
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return self.title
+
+
 class Meeting(models.Model):
     group = models.ForeignKey(
         Group, on_delete=models.CASCADE, related_name="meetings", null=True
     )
 
     date = models.DateField(default=timezone.now)
-    topic = models.CharField(max_length=200, blank=True, null=True)
+    topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
 
     class Meta:

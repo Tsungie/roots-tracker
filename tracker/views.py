@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect
 from django.db import IntegrityError
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 import io
 import requests
@@ -14,7 +14,7 @@ import json
 import os
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.utils import timezone
 
 #
@@ -86,62 +86,97 @@ def mark_attendance(request):
     )
 
 
+
+
 def download_master_summary(request):
+    # 1. Get the Active Group
+    group_id = request.session.get("active_group_id")
+    active_group = Group.objects.get(id=group_id)
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     elements = []
-
     styles = getSampleStyleSheet()
-    title = Paragraph("Roots Master Summary Report - All Members", styles["Title"])
+
+    # Title with Group Name
+    title = Paragraph(f"Roots Summary Report: {active_group.name}", styles["Title"])
     elements.append(title)
+    elements.append(Spacer(1, 12))
 
-    data = [["Member Name", "Total Paid (Approved)", "Meeting Breakdown"]]
+    # Updated Table Headers
+    data = [["Member Name", "Total Paid", "Balance Due", "Meeting & Session Breakdown"]]
 
-    # Automatically grab ALL members and ALL meetings
-    all_meetings = Meeting.objects.all().order_by("date")
-    all_members = Member.objects.all().order_by("first_name")
+    # Get data for this specific group
+    all_meetings = Meeting.objects.filter(group=active_group).order_by("date")
+    all_members = Member.objects.filter(group=active_group).order_by("first_name")
+
+    # Calculate how many months have passed since the group started (for the $10/month rule)
+    # For now, we can count unique months in the meetings list to see how many months they 'should' have paid for
+    active_months_count = all_meetings.dates("date", "month").count()
+    expected_total = active_months_count * 10
 
     for member in all_members:
-        attendance_details = ""
+        # Calculate Balance
+        total_paid = member.total_approved_payments
+        balance = (
+            max(0, expected_total - total_paid)
+            if not member.is_exempt_from_paying
+            else 0
+        )
+
+        # Create Meeting Breakdown with Topics
+        breakdown_text = ""
         for meeting in all_meetings:
             record = Attendance.objects.filter(member=member, meeting=meeting).first()
 
-            if record and record.mode in ["physical", "online"]:
-                status = (
-                    f"<font color='green'>Attended ({record.get_mode_display()})</font>"
-                )
-            else:
-                status = "<font color='red'>Absent</font>"
+            # Show the Topic Name (e.g. Cause & Effect) and the Date
+            topic_name = meeting.topic.title if meeting.topic else "General Meeting"
+            meeting_label = f"<b>{topic_name}</b> ({meeting.date.strftime('%b %d')})"
 
-            attendance_details += (
-                f"<b>{meeting.date.strftime('%b %d, %Y')}</b>: {status}<br/>"
-            )
+            if record and record.mode in ["physical", "online"]:
+                status = "<font color='green'>✔ Attended</font>"
+            else:
+                status = "<font color='red'>✘ Absent</font>"
+
+            breakdown_text += f"{meeting_label}: {status}<br/>"
 
         if not all_meetings:
-            attendance_details = "No meetings recorded yet."
+            breakdown_text = "No sessions recorded."
 
-        p_attendance = Paragraph(attendance_details, styles["Normal"])
+        p_breakdown = Paragraph(breakdown_text, styles["Normal"])
 
+        # Add row to PDF
         data.append(
             [
                 f"{member.first_name} {member.last_name}",
-                f"${member.total_approved_payments}",
-                p_attendance,
+                f"${total_paid}",
+                f"${balance}",
+                p_breakdown,
             ]
         )
 
-    t = Table(data, colWidths=[150, 120, 250])
+    # Styling the PDF Table
+    t = Table(data, colWidths=[120, 80, 80, 240])
     t.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#8e44ad")),
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.HexColor("#8e44ad"),
+                ),  # Roots Purple
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
                 ("ALIGN", (0, 0), (-1, -1), "LEFT"),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-                ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#ecf0f1")),
-                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+                (
+                    "ROWBACKGROUNDS",
+                    (0, 1),
+                    (-1, -1),
+                    [colors.whitesmoke, colors.HexColor("#f4f7f6")],
+                ),
             ]
         )
     )
@@ -151,14 +186,11 @@ def download_master_summary(request):
 
     pdf = buffer.getvalue()
     buffer.close()
-
     response = HttpResponse(content_type="application/pdf")
-    # This names the file nicely for you
     response["Content-Disposition"] = (
-        'attachment; filename="Roots_Complete_Group_Summary.pdf"'
+        f'attachment; filename="{active_group.name}_Summary.pdf"'
     )
     response.write(pdf)
-
     return response
 
 
