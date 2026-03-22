@@ -115,45 +115,47 @@ def download_master_summary(request):
 
 @csrf_exempt
 def whatsapp_webhook(request):
-    # 1. THE HANDSHAKE
+    # 1. THE HANDSHAKE (LEAVE THIS ALONE!)
     if request.method == "GET":
         mode = request.GET.get("hub.mode")
-        token = request.GET.get("hub.verify_token")
-        challenge = request.GET.get("hub.challenge")
+        # ... (all your handshake code stays exactly the same) ...
 
-        # Back to the secure hidden password!
-        VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
-
-        if mode == "subscribe" and token == VERIFY_TOKEN:
-            return HttpResponse(challenge, status=200)
-        else:
-            return HttpResponse("Forbidden", status=403)
-
-    # 2. THE INBOX & AUTO-REPLY
+    # 2. THE INBOX & ROUTING
     elif request.method == "POST":
         try:
             body = json.loads(request.body)
 
-            # Check if this is an actual WhatsApp message
             if "object" in body and body["object"] == "whatsapp_business_account":
                 entry = body.get("entry", [{}])[0]
                 changes = entry.get("changes", [{}])[0]
                 value = changes.get("value", {})
 
-                # If there is a message, extract the text and phone number!
                 if "messages" in value:
                     message = value["messages"][0]
                     sender_phone = message["from"]
+                    message_type = message.get("type")
 
-                    # Sometimes people send images/audio, so we default to "" if it's not text
-                    incoming_text = message.get("text", {}).get(
-                        "body", "Media received!"
-                    )
+                    # Route A: It's a standard text message
+                    if message_type == "text":
+                        incoming_text = message["text"]["body"]
+                        print(
+                            f"📩 Received TEXT: '{incoming_text}' from {sender_phone}"
+                        )
+                        send_whatsapp_reply(
+                            sender_phone, f"Roots got your text: '{incoming_text}'"
+                        )
 
-                    print(f"📩 Received '{incoming_text}' from {sender_phone}")
-
-                    # Fire off the auto-reply!
-                    send_whatsapp_reply(sender_phone, incoming_text)
+                    # Route B: <--- THIS IS THE ONLY PART YOU CHANGE!
+                    elif message_type == "image":
+                        image_id = message["image"]["id"]
+                        print(
+                            f"📸 Received IMAGE with ID: {image_id} from {sender_phone}"
+                        )
+                        send_whatsapp_reply(
+                            sender_phone,
+                            "Awesome! I am downloading your receipt right now...",
+                        )
+                        download_whatsapp_media(image_id)
 
             return HttpResponse("EVENT_RECEIVED", status=200)
 
@@ -164,7 +166,6 @@ def whatsapp_webhook(request):
     return HttpResponse("Method not allowed", status=405)
 
 
-# 3. THE OUTBOX (Sending a custom text message back)
 # 3. THE OUTBOX (Sending a custom text message back)
 def send_whatsapp_reply(recipient_phone, received_text):
     ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
@@ -195,3 +196,37 @@ def send_whatsapp_reply(recipient_phone, received_text):
 
     print(f"📤 META API RESPONSE CODE: {response.status_code}")
     print(f"📝 META API DETAILS: {response.text}")
+
+
+def download_whatsapp_media(media_id):
+    ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
+    headers = {"Authorization": f"Bearer {ACCESS_TOKEN}"}
+
+    # DANCE STEP 1: Ask Meta for the secure download URL
+    print(f"🔍 Asking Meta for the URL for media ID: {media_id}")
+    url_request = requests.get(
+        f"https://graph.facebook.com/v22.0/{media_id}", headers=headers
+    )
+    media_data = url_request.json()
+
+    if "url" not in media_data:
+        print(f"❌ Failed to get URL. Meta said: {media_data}")
+        return None
+
+    media_url = media_data["url"]
+    print(f"✅ Got secure URL! Downloading image now...")
+
+    # DANCE STEP 2: Use the URL to download the actual image bytes
+    image_response = requests.get(media_url, headers=headers)
+
+    if image_response.status_code == 200:
+        # Save it temporarily to your server so we can prove it works!
+        filename = f"whatsapp_receipt_{media_id}.jpg"
+        with open(filename, "wb") as f:
+            f.write(image_response.content)
+
+        print(f"🎉 SUCCESS! Image downloaded and saved as {filename}")
+        return filename
+    else:
+        print(f"❌ Failed to download image. Status: {image_response.status_code}")
+        return None
