@@ -19,6 +19,7 @@ from django.utils import timezone
 
 #
 
+
 def upload_receipt(request):
     error_message = None  # Set a blank error message initially
 
@@ -85,7 +86,7 @@ def mark_attendance(request):
     )
 
 
-def download_master_summary(request):
+def download_summary_summary(request):
     # 1. Get the Active Group
     group_id = request.session.get("active_group_id")
     active_group = Group.objects.get(id=group_id)
@@ -269,10 +270,15 @@ def whatsapp_webhook(request):
                                     "No problem! I will toss that photo in the trash and pretend I didn't see it. 🗑️",
                                 )
 
-                            
                             # 🧠 MEMORY STEP 3: The final click! Catch the Payment Mode & Submit to Database.
-                            elif button_id in ["btn_pay_cash", "btn_pay_bank", "btn_pay_mobile"]:
-                                draft = WhatsAppDraft.objects.filter(phone_number=sender_phone).first()
+                            elif button_id in [
+                                "btn_pay_cash",
+                                "btn_pay_bank",
+                                "btn_pay_mobile",
+                            ]:
+                                draft = WhatsAppDraft.objects.filter(
+                                    phone_number=sender_phone
+                                ).first()
 
                                 if draft:
                                     # 1. Translate the Payment Mode
@@ -287,11 +293,26 @@ def whatsapp_webhook(request):
                                         db_method = "ecocash"
 
                                     # 2. Translate the Month string to a number (e.g., "March" -> 3)
-                                    month_map = {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6, "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12}
+                                    month_map = {
+                                        "January": 1,
+                                        "February": 2,
+                                        "March": 3,
+                                        "April": 4,
+                                        "May": 5,
+                                        "June": 6,
+                                        "July": 7,
+                                        "August": 8,
+                                        "September": 9,
+                                        "October": 10,
+                                        "November": 11,
+                                        "December": 12,
+                                    }
                                     db_month = month_map.get(draft.month, 1)
 
                                     # 3. Find the official Roots Member (matching the last 9 digits of the phone number)
-                                    member = Member.objects.filter(phone_number__endswith=sender_phone[-9:]).first()
+                                    member = Member.objects.filter(
+                                        phone_number__endswith=sender_phone[-9:]
+                                    ).first()
 
                                     if member:
                                         try:
@@ -301,19 +322,26 @@ def whatsapp_webhook(request):
                                                 amount=10.00,
                                                 month=db_month,
                                                 payment_method=db_method,
-                                                status="pending"
+                                                status="pending",
                                             )
 
                                             # 5. Grab the image we downloaded in Route B and attach it
-                                            filename = f"whatsapp_receipt_{draft.image_id}.jpg"
+                                            filename = (
+                                                f"whatsapp_receipt_{draft.image_id}.jpg"
+                                            )
                                             if os.path.exists(filename):
-                                                with open(filename, 'rb') as f:
-                                                    new_payment.receipt_image.save(filename, File(f), save=False)
+                                                with open(filename, "rb") as f:
+                                                    new_payment.receipt_image.save(
+                                                        filename, File(f), save=False
+                                                    )
 
-                                            new_payment.save() # Saves to database AND uploads to Cloudinary!
+                                            new_payment.save()  # Saves to database AND uploads to Cloudinary!
 
                                             # 6. Success! Send the Boom message.
-                                            send_whatsapp_reply(sender_phone, f"Boom! 💥 Your $10 {draft.payment_mode} payment receipt for {draft.month} has been successfully submitted to the Roots Command Center for approval. Thank you!")
+                                            send_whatsapp_reply(
+                                                sender_phone,
+                                                f"Boom! 💥 Your $10 {draft.payment_mode} payment receipt for {draft.month} has been successfully submitted to the Roots Command Center for approval. Thank you!",
+                                            )
 
                                             # 7. Clean up: Delete the local image file and wipe the clipboard
                                             if os.path.exists(filename):
@@ -322,13 +350,22 @@ def whatsapp_webhook(request):
 
                                         except IntegrityError:
                                             # If they already paid for this month, our database will block it!
-                                            send_whatsapp_reply(sender_phone, f"Hold on! 🛑 You have already submitted a receipt for {draft.month}. An admin needs to review it first!")
-                                            draft.delete() # Wipe the clipboard anyway
+                                            send_whatsapp_reply(
+                                                sender_phone,
+                                                f"Hold on! 🛑 You have already submitted a receipt for {draft.month}. An admin needs to review it first!",
+                                            )
+                                            draft.delete()  # Wipe the clipboard anyway
                                     else:
-                                        send_whatsapp_reply(sender_phone, "I received your details, but I couldn't find a Roots member linked to this phone number! Please ask an admin to check your profile. 🕵️‍♀️")
+                                        send_whatsapp_reply(
+                                            sender_phone,
+                                            "I received your details, but I couldn't find a Roots member linked to this phone number! Please ask an admin to check your profile. 🕵️‍♀️",
+                                        )
                                         draft.delete()
                                 else:
-                                    send_whatsapp_reply(sender_phone, "Oops! I lost your draft. Could you send that photo one more time?")
+                                    send_whatsapp_reply(
+                                        sender_phone,
+                                        "Oops! I lost your draft. Could you send that photo one more time?",
+                                    )
                         # 2. Did they select an item from a list? (The Month)
                         elif "list_reply" in message["interactive"]:
                             list_id = message["interactive"]["list_reply"]["id"]
@@ -489,12 +526,13 @@ def download_whatsapp_media(media_id):
         with open(filename, "wb") as f:
             f.write(image_response.content)
 
-
         print(f"🎉 SUCCESS! Image downloaded and saved as {filename}")
         return filename
     else:
         print(f"❌ Failed to download image. Status: {image_response.status_code}")
         return None
+
+
 # 4. THE INTERACTIVE MENU (Asking Yes/No)
 def send_receipt_confirmation_button(recipient_phone):
     ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
@@ -535,9 +573,10 @@ def send_receipt_confirmation_button(recipient_phone):
         },
     }
 
-
     print(f"🔘 Sending interactive buttons to {recipient_phone}...")
     requests.post(url, headers=headers, json=payload)
+
+
 # 5. THE LIST MENU (Asking for the Month)
 # 5. THE LIST MENU (Asking for the Month)
 def send_month_selection_list(recipient_phone):
@@ -584,10 +623,11 @@ def send_month_selection_list(recipient_phone):
     print(f"📋 Sending month list menu to {recipient_phone}...")
     response = requests.post(url, headers=headers, json=payload)
 
-
     # DEBUG: Let's catch any Meta errors so we aren't blind!
     print(f"📤 LIST MENU RESPONSE CODE: {response.status_code}")
     print(f"📝 LIST MENU DETAILS: {response.text}")
+
+
 # 6. THE PAYMENT MODE MENU (Cash, Bank, Mobile)
 def send_payment_mode_buttons(recipient_phone):
     ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
