@@ -240,7 +240,7 @@ def whatsapp_webhook(request):
                                     "No problem! I will toss that photo in the trash and pretend I didn't see it. 🗑️",
                                 )
 
-                            # 🧠 MEMORY STEP 3: The final click! Catch the Payment Mode.
+                            
                             # 🧠 MEMORY STEP 3: The final click! Catch the Payment Mode & Submit to Database.
                             elif button_id in ["btn_pay_cash", "btn_pay_bank", "btn_pay_mobile"]:
                                 draft = WhatsAppDraft.objects.filter(phone_number=sender_phone).first()
@@ -341,16 +341,21 @@ def select_group(request):
     return render(request, "tracker/select_group.html", {"groups": groups})
 
 
-
-
 def dashboard(request):
     group_id = request.session.get("active_group_id")
     if not group_id:
         return redirect("select_group")
 
+    # Pre-load all linked data (prefetch_related) to make the page load faster!
     active_group = Group.objects.prefetch_related("members", "meetings").get(
         id=group_id
     )
+
+    # Load all members and meetings, ordered nicely
+    members = active_group.members.all().order_by("last_name")
+    meetings = active_group.meetings.all().order_by(
+        "-date"
+    )  # Order by latest meeting first!
 
     # 1. Payment Data (Current Month)
     current_month = timezone.now().month
@@ -386,6 +391,8 @@ def dashboard(request):
         "tracker/dashboard.html",
         {
             "active_group": active_group,
+            "members": members,
+            "meetings": meetings,
             "paid_count": paid_count,
             "unpaid_count": unpaid_count,
             "meeting_labels": json.dumps(meeting_labels),

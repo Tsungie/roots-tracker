@@ -1,67 +1,412 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dashboard | Roots</title>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ active_group.name }} Command Center | Roots</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-group { margin-bottom: 20px; }
-        .nav-btn { padding: 10px 15px; text-decoration: none; border-radius: 5px; color: white; font-weight: bold; margin-right: 10px; }
-        canvas { max-height: 300px; }
+      /* --- Roots Pro CSS --- */
+      :root {
+        --roots-green: #2c3e50;
+        --roots-purple: #8e44ad;
+        --roots-purple-hover: #732d91;
+        --text-main: #2c3e50;
+        --text-light: #7f8c8d;
+        --bg-body: #f4f7f6;
+        --sidebar-width: 250px;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: var(--bg-body);
+        margin: 0;
+        display: flex;
+        color: var(--text-main);
+      }
+      h1,
+      h2,
+      h3 {
+        color: var(--text-main);
+        font-weight: 700;
+        margin-top: 0;
+      }
+
+      /* Sidebar Layout */
+      .sidebar {
+        width: var(--sidebar-width);
+        background: white;
+        height: 100vh;
+        position: fixed;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      .sidebar-header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      .roots-logo {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--roots-purple);
+      }
+      .roots-sub-logo {
+        font-size: 14px;
+        color: var(--text-light);
+      }
+      .nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .nav-item {
+        margin-bottom: 10px;
+      }
+      .nav-link {
+        display: block;
+        padding: 12px 15px;
+        text-decoration: none;
+        color: var(--text-main);
+        font-weight: 600;
+        border-radius: 8px;
+        transition: 0.2s;
+      }
+      .nav-link:hover {
+        background: #f0f3f5;
+        color: var(--roots-purple);
+      }
+      .nav-link.active {
+        background: var(--roots-purple);
+        color: white;
+      }
+
+      /* Main Content Area */
+      .main-content {
+        margin-left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
+        padding: 40px;
+        box-sizing: border-box;
+      }
+      .card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+
+      /* Stats Grid */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 2fr 3fr;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+      .stats-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 40px;
+        font-weight: 700;
+        color: var(--roots-purple);
+      }
+      .stat-label {
+        color: var(--text-light);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* Modern Table Styling */
+      .data-table-section {
+        margin-top: 30px;
+      }
+      .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+      .roots-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .roots-table th,
+      .roots-table td {
+        text-align: left;
+        padding: 15px 20px;
+        border-bottom: 1px solid #f0f3f5;
+      }
+      .roots-table th {
+        background-color: #f8fafc;
+        color: var(--text-light);
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .roots-table tr:last-child td {
+        border-bottom: none;
+      }
+      .roots-table tr:hover {
+        background-color: #fcfdfe;
+      }
+
+      /* Badges */
+      .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .badge-admin {
+        background: #e9d8fd;
+        color: #553c9a;
+      }
+      .badge-member {
+        background: #e0f2f1;
+        color: #00796b;
+      }
+
+      /* Action Buttons */
+      .action-btn {
+        background: var(--roots-purple);
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.2s;
+      }
+      .action-btn:hover {
+        background: var(--roots-purple-hover);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="roots-logo">R.O.O.T.S</div>
+        <div class="roots-sub-logo">Ladies Discipleship</div>
+      </div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="{% url 'dashboard' %}" class="nav-link active"
+            >📊 Dashboard</a
+          >
+        </li>
+        <li class="nav-item"><a href="#" class="nav-link">👥 Members</a></li>
+        <li class="nav-item"><a href="#" class="nav-link">📝 Meetings</a></li>
+        <li class="nav-item"><a href="#" class="nav-link">💳 Payments</a></li>
+        <li class="nav-item">
+          <a href="{% url 'download_summary' %}" class="nav-link"
+            >📄 PDF Report</a
+          >
+        </li>
+        <li class="nav-item" style="margin-top: 30px">
+          <a
+            href="{% url 'select_group' %}"
+            class="nav-link"
+            style="color: var(--text-light)"
+            >🔄 Switch Workspace</a
+          >
+        </li>
+      </ul>
+    </nav>
 
-    <div class="card">
-        <h1>📊 {{ active_group.name }} Command Center</h1>
-        
-        <div class="btn-group">
-            <a href="{% url 'mark_attendance' %}" class="nav-btn" style="background: #f39c12;">📝 Mark Attendance</a>
-            <a href="{% url 'upload_receipt' %}" class="nav-btn" style="background: #27ae60;">💰 Bulk Payments</a>
-            <a href="{% url 'select_group' %}" class="nav-btn" style="background: #95a5a6;">🔄 Switch Group</a>
+    <main class="main-content">
+      <header
+        style="
+          margin-bottom: 40px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <div>
+          <h1 style="color: var(--roots-purple)">Command Center</h1>
+          <p style="color: var(--text-light)">
+            Managing workspace:
+            <strong style="color: var(--text-main)"
+              >{{ active_group.name }}</strong
+            >
+          </p>
         </div>
+        <a
+          href="{% url 'select_group' %}"
+          class="action-btn"
+          style="
+            background: var(--roots-purple);
+            border: 2px solid var(--roots-purple);
+          "
+        >
+          🔄 Switch Group
+        </a>
+      </header>
 
-        <div class="grid">
-            <div class="card">
-                <h3>💳 Payment Status (Current Month)</h3>
-                <canvas id="paymentChart"></canvas>
-            </div>
-
-            <div class="card">
-                <h3>📈 Attendance (Last 5 Meetings)</h3>
-                <canvas id="attendanceChart"></canvas>
-            </div>
+      <section class="stats-grid">
+        <div class="stats-card card">
+          <h3>💳 Payment Status (March 2026)</h3>
+          <canvas id="paymentChart"></canvas>
         </div>
-    </div>
+        <div class="stats-card card">
+          <h3>📈 Attendance Trend (Last 5)</h3>
+          <canvas id="attendanceChart"></canvas>
+        </div>
+      </section>
+
+      <section class="card data-table-section">
+        <div class="table-header">
+          <h2>👥 Members</h2>
+          <a href="#" class="action-btn"> + Add New Member </a>
+        </div>
+        <table class="roots-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for member in members %}
+            <tr>
+              <td style="font-weight: 600">
+                {{ member.first_name }} {{ member.last_name }}
+              </td>
+              <td style="color: var(--text-light)">
+                {{ member.phone_number }}
+              </td>
+              <td>
+                {% if member.role == 'admin' %}
+                <span class="badge badge-admin">Admin / Supervisor</span>
+                {% else %}
+                <span class="badge badge-member">Member</span>
+                {% endif %}
+              </td>
+              <td>
+                <a
+                  href="#"
+                  style="
+                    color: var(--roots-purple);
+                    text-decoration: none;
+                    font-weight: 600;
+                  "
+                  >Edit</a
+                >
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td
+                colspan="4"
+                style="
+                  text-align: center;
+                  color: var(--text-light);
+                  font-style: italic;
+                "
+              >
+                No members in this group yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card data-table-section">
+        <div class="table-header">
+          <h2>📝 Meetings (Ordered by Latest)</h2>
+          <a
+            href="#"
+            class="action-btn"
+            style="background: var(--roots-purple)"
+          >
+            📝 Mark Attendance
+          </a>
+        </div>
+        <table class="roots-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Topic</th>
+              <th>Attendees</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for meeting in meetings %}
+            <tr>
+              <td style="font-weight: 600; color: var(--roots-purple)">
+                {{ meeting.date|date:"F d, Y" }}
+              </td>
+              <td>{{ meeting.topic|default:"(No topic set)" }}</td>
+              <td style="font-weight: 600">
+                {{ meeting.attendees.count }} Attended
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td
+                colspan="3"
+                style="
+                  text-align: center;
+                  color: var(--text-light);
+                  font-style: italic;
+                "
+              >
+                No meetings recorded yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </main>
 
     <script>
-        // Payment Pie Chart
-        new Chart(document.getElementById('paymentChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Paid', 'Unpaid'],
-                datasets: [{
-                    data: [{{ paid_count }}, {{ unpaid_count }}],
-                    backgroundColor: ['#2ecc71', '#e74c3c']
-                }]
-            }
-        });
+      // Payment Pie Chart
+      new Chart(document.getElementById('paymentChart'), {
+          type: 'doughnut',
+          data: {
+              labels: ['Paid', 'Unpaid'],
+              datasets: [{
+                  data: [{{ paid_count }}, {{ unpaid_count }}],
+                  backgroundColor: ['#2ecc71', '#e74c3c']
+              }]
+          }
+      });
 
-        // Attendance Bar Chart
-        new Chart(document.getElementById('attendanceChart'), {
-            type: 'bar',
-            data: {
-                labels: {{ meeting_labels|safe }},
-                datasets: [{
-                    label: 'Attended',
-                    data: {{ attendance_counts|safe }},
-                    backgroundColor: '#3498db'
-                }]
-            },
-            options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-        });
+      // Attendance Bar Chart
+      new Chart(document.getElementById('attendanceChart'), {
+          type: 'bar',
+          data: {
+              labels: {{ meeting_labels|safe }},
+              datasets: [{
+                  label: 'Attended',
+                  data: {{ attendance_counts|safe }},
+                  backgroundColor: '#3498db'
+              }]
+          },
+          options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      });
     </script>
-</body>
+  </body>
 </html>
