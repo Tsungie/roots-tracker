@@ -7,7 +7,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 import io
 import requests
-from .models import Member, Meeting, Attendance, WhatsAppDraft, Payment, Group
+from .models import Member, Meeting, Attendance, WhatsAppDraft, Payment, Group, Topic
 from django.core.files import File
 from .forms import ReceiptUploadForm
 import json
@@ -51,28 +51,26 @@ def mark_attendance(request):
 
     active_group = Group.objects.get(id=group_id)
     members = Member.objects.filter(group=active_group)
+    topics = Topic.objects.filter(group=active_group)  # Get all your custom topics
 
-    # If saving the attendance...
     if request.method == "POST":
         meeting_date = request.POST.get("meeting_date")
-        topic = request.POST.get("topic")
+        topic_id = request.POST.get("topic_id")  # Get the selected topic ID
+        selected_topic = Topic.objects.get(id=topic_id)
 
-        # 1. Create the Meeting object
+        # Create or find the Meeting for this topic/date
         meeting, created = Meeting.objects.get_or_create(
-            group=active_group, date=meeting_date, defaults={"topic": topic}
+            group=active_group, topic=selected_topic, date=meeting_date
         )
 
-        # 2. Loop through every member and save their status
         for member in members:
             mode = request.POST.get(f"mode_{member.id}")
             comment = request.POST.get(f"comment_{member.id}")
-
             Attendance.objects.update_or_create(
                 meeting=meeting,
                 member=member,
                 defaults={"mode": mode, "comments": comment},
             )
-
         return redirect("dashboard")
 
     return render(
@@ -81,11 +79,10 @@ def mark_attendance(request):
         {
             "active_group": active_group,
             "members": members,
+            "topics": topics,
             "today": timezone.now().date().isoformat(),
         },
     )
-
-
 
 
 def download_master_summary(request):
