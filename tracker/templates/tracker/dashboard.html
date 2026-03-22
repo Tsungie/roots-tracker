@@ -212,9 +212,9 @@
             >📊 Dashboard</a
           >
         </li>
-        <li class="nav-item"><a href="#" class="nav-link">👥 Members</a></li>
-        <li class="nav-item"><a href="#" class="nav-link">📝 Meetings</a></li>
-        <li class="nav-item"><a href="#" class="nav-link">💳 Payments</a></li>
+        <li class="nav-item"><a href="/admin/tracker/member/" class="nav-link">👥 Members</a></li>
+        <li class="nav-item"><a href="/admin/tracker/meeting" class="nav-link">📝 Meetings</a></li>
+        <li class="nav-item"><a href="/admin/tracker/payment/" class="nav-link">💳 Payments</a></li>
         <li class="nav-item">
           <a href="{% url 'download_summary' %}" class="nav-link"
             >📄 PDF Report</a
@@ -335,13 +335,9 @@
       <section class="card data-table-section">
         <div class="table-header">
           <h2>📝 Meetings (Ordered by Latest)</h2>
-          <a
-            href="#"
-            class="action-btn"
-            style="background: var(--roots-purple)"
-          >
-            📝 Mark Attendance
-          </a>
+          <a href="{% url 'mark_attendance' %}" class="action-btn" style="background: var(--roots-purple);">
+    📝 Mark Attendance
+</a>
         </div>
         <table class="roots-table">
           <thead>
