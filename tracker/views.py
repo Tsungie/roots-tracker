@@ -5,7 +5,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import io
 import requests
-from .models import Member, Meeting, Attendance
+from .models import Member, Meeting, Attendance, WhatsAppDraft
 import json
 import os
 from django.http import HttpResponse, JsonResponse
@@ -143,35 +143,71 @@ def whatsapp_webhook(request):
                         )
                         send_whatsapp_reply(sender_phone, incoming_text)
 
-                    # Route B: It's an image! (Likely a receipt)
+                   # Route B: It's an image! (Likely a receipt)
                     elif message_type == "image":
                         image_id = message["image"]["id"]
-                        print(
-                            f"📸 Received IMAGE with ID: {image_id} from {sender_phone}"
-                        )
+                        print(f"📸 Received IMAGE with ID: {image_id} from {sender_phone}")
+                        
+                        # 🧠 MEMORY STEP 1: Grab the clipboard! Create a fresh draft for this phone number.
+                        draft, created = WhatsAppDraft.objects.get_or_create(phone_number=sender_phone)
+                        draft.image_id = image_id
+                        draft.month = ""         # Reset the month in case they are starting over
+                        draft.payment_mode = ""  # Reset the payment mode
+                        draft.save()
+                        
+                        # Ask the user if it's a receipt
                         send_receipt_confirmation_button(sender_phone)
                         download_whatsapp_media(image_id)
 
                     # Route C: It's an interactive button OR list click!
                     elif message_type == "interactive":
-
+                        
                         # 1. Did they click a simple button? (Yes/No OR Payment Mode)
                         if "button_reply" in message["interactive"]:
                             button_id = message["interactive"]["button_reply"]["id"]
-                            print(
-                                f"🔘 User clicked button ID: {button_id} from {sender_phone}"
-                            )
-
+                            print(f"🔘 User clicked button ID: {button_id} from {sender_phone}")
+                            
                             if button_id == "btn_yes_receipt":
                                 send_month_selection_list(sender_phone)
-
+                                
                             elif button_id == "btn_no_receipt":
-                                send_whatsapp_reply(
-                                    sender_phone,
-                                    "No problem! I will toss that photo in the trash and pretend I didn't see it. 🗑️",
-                                )
+                                send_whatsapp_reply(sender_phone, "No problem! I will toss that photo in the trash and pretend I didn't see it. 🗑️")
+                                
+                            # 🧠 MEMORY STEP 3: The final click! Catch the Payment Mode.
+                            elif button_id in ["btn_pay_cash", "btn_pay_bank", "btn_pay_mobile"]:
+                                # Look up their draft
+                                draft = WhatsAppDraft.objects.filter(phone_number=sender_phone).first()
+                                
+                                if draft:
+                                    # Save how they paid based on the button they clicked
+                                    if button_id == "btn_pay_cash":
+                                        draft.payment_mode = "Cash"
+                                    elif button_id == "btn_pay_bank":
+                                        draft.payment_mode = "Bank Transfer"
+                                    elif button_id == "btn_pay_mobile":
+                                        draft.payment_mode = "Mobile Money"
+                                    draft.save()
+                                    
+                                    # Send the ultimate custom confirmation message!
+                                    send_whatsapp_reply(sender_phone, f"Boom! 💥 Your $10 {draft.payment_mode} payment receipt for {draft.month} has been successfully submitted to the Roots Command Center for approval. Thank you!")
+                                else:
+                                    send_whatsapp_reply(sender_phone, "Oops! I lost your draft. Could you send that photo one more time?")
 
-                            # Catch the final Payment Mode click!
+                        # 2. Did they select an item from a list? (The Month)
+                        elif "list_reply" in message["interactive"]:
+                            list_id = message["interactive"]["list_reply"]["id"]
+                            list_title = message["interactive"]["list_reply"]["title"] # e.g., "March"
+                            print(f"📋 User selected list item: {list_title} ({list_id}) from {sender_phone}")
+                            
+                            # 🧠 MEMORY STEP 2: Write down the month they selected!
+                            draft = WhatsAppDraft.objects.filter(phone_number=sender_phone).first()
+                            if draft:
+                                draft.month = list_title
+                                draft.save()
+                                
+                                # Now ask how they paid!
+                                send_payment_mode_buttons(sender_phone)
+
                             elif button_id in [
                                 "btn_pay_cash",
                                 "btn_pay_bank",
