@@ -7,7 +7,8 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import io
 import requests
-from .models import Member, Meeting, Attendance, WhatsAppDraft
+from .models import Member, Meeting, Attendance, WhatsAppDraft, Payment
+from django.core.files import File
 from .forms import ReceiptUploadForm
 import json
 import os
@@ -195,37 +196,65 @@ def whatsapp_webhook(request):
                                 )
 
                             # 🧠 MEMORY STEP 3: The final click! Catch the Payment Mode.
-                            elif button_id in [
-                                "btn_pay_cash",
-                                "btn_pay_bank",
-                                "btn_pay_mobile",
-                            ]:
-                                # Look up their draft
-                                draft = WhatsAppDraft.objects.filter(
-                                    phone_number=sender_phone
-                                ).first()
-
+                       # 🧠 MEMORY STEP 3: The final click! Catch the Payment Mode & Submit to Database.
+                            elif button_id in ["btn_pay_cash", "btn_pay_bank", "btn_pay_mobile"]:
+                                draft = WhatsAppDraft.objects.filter(phone_number=sender_phone).first()
+                                
                                 if draft:
-                                    # Save how they paid based on the button they clicked
+                                    # 1. Translate the Payment Mode
                                     if button_id == "btn_pay_cash":
                                         draft.payment_mode = "Cash"
+                                        db_method = "physical"
                                     elif button_id == "btn_pay_bank":
                                         draft.payment_mode = "Bank Transfer"
+                                        db_method = "bank"
                                     elif button_id == "btn_pay_mobile":
                                         draft.payment_mode = "Mobile Money"
-                                    draft.save()
+                                        db_method = "ecocash"
+                                        
+                                    # 2. Translate the Month string to a number (e.g., "March" -> 3)
+                                    month_map = {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6, "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12}
+                                    db_month = month_map.get(draft.month, 1)
 
-                                    # Send the ultimate custom confirmation message!
-                                    send_whatsapp_reply(
-                                        sender_phone,
-                                        f"Boom! 💥 Your $10 {draft.payment_mode} payment receipt for {draft.month} has been successfully submitted to the Roots Command Center for approval. Thank you!",
-                                    )
+                                    # 3. Find the official Roots Member (matching the last 9 digits of the phone number)
+                                    member = Member.objects.filter(phone_number__endswith=sender_phone[-9:]).first()
+
+                                    if member:
+                                        try:
+                                            # 4. Create the official Payment record!
+                                            new_payment = Payment(
+                                                member=member,
+                                                amount=10.00,
+                                                month=db_month,
+                                                payment_method=db_method,
+                                                status="pending"
+                                            )
+                                            
+                                            # 5. Grab the image we downloaded in Route B and attach it
+                                            filename = f"whatsapp_receipt_{draft.image_id}.jpg"
+                                            if os.path.exists(filename):
+                                                with open(filename, 'rb') as f:
+                                                    new_payment.receipt_image.save(filename, File(f), save=False)
+                                            
+                                            new_payment.save() # Saves to database AND uploads to Cloudinary!
+                                            
+                                            # 6. Success! Send the Boom message.
+                                            send_whatsapp_reply(sender_phone, f"Boom! 💥 Your $10 {draft.payment_mode} payment receipt for {draft.month} has been successfully submitted to the Roots Command Center for approval. Thank you!")
+                                            
+                                            # 7. Clean up: Delete the local image file and wipe the clipboard
+                                            if os.path.exists(filename):
+                                                os.remove(filename)
+                                            draft.delete()
+
+                                        except IntegrityError:
+                                            # If they already paid for this month, our database will block it!
+                                            send_whatsapp_reply(sender_phone, f"Hold on! 🛑 You have already submitted a receipt for {draft.month}. An admin needs to review it first!")
+                                            draft.delete() # Wipe the clipboard anyway
+                                    else:
+                                        send_whatsapp_reply(sender_phone, "I received your details, but I couldn't find a Roots member linked to this phone number! Please ask an admin to check your profile. 🕵️‍♀️")
+                                        draft.delete()
                                 else:
-                                    send_whatsapp_reply(
-                                        sender_phone,
-                                        "Oops! I lost your draft. Could you send that photo one more time?",
-                                    )
-
+                                    send_whatsapp_reply(sender_phone, "Oops! I lost your draft. Could you send that photo one more time?")
                         # 2. Did they select an item from a list? (The Month)
                         elif "list_reply" in message["interactive"]:
                             list_id = message["interactive"]["list_reply"]["id"]
