@@ -152,24 +152,36 @@ def whatsapp_webhook(request):
                         send_receipt_confirmation_button(sender_phone)
                         download_whatsapp_media(image_id)
 
-                    # Route C: It's an interactive button click!
+                    
+                    # Route C: It's an interactive button OR list click!
                     elif message_type == "interactive":
-                        button_reply = message["interactive"].get("button_reply", {})
-                        button_id = button_reply.get("id")
-                        print(
-                            f"🔘 User clicked button ID: {button_id} from {sender_phone}"
-                        )
 
-                        if button_id == "btn_yes_receipt":
-                            # Send them the popup list of months!
-                            send_month_selection_list(sender_phone)
-                            
-
-                        elif button_id == "btn_no_receipt":
-                            send_whatsapp_reply(
-                                sender_phone,
-                                "No problem! I will toss that photo in the trash and pretend I didn't see it. 🗑️",
+                        # 1. Did they click a simple button? (Yes/No)
+                        if "button_reply" in message["interactive"]:
+                            button_id = message["interactive"]["button_reply"]["id"]
+                            print(
+                                f"🔘 User clicked button ID: {button_id} from {sender_phone}"
                             )
+
+                            if button_id == "btn_yes_receipt":
+                                send_month_selection_list(sender_phone)
+
+                            elif button_id == "btn_no_receipt":
+                                send_whatsapp_reply(
+                                    sender_phone,
+                                    "No problem! I will toss that photo in the trash and pretend I didn't see it. 🗑️",
+                                )
+
+                        # 2. Did they select an item from a list? (The Month)
+                        elif "list_reply" in message["interactive"]:
+                            list_id = message["interactive"]["list_reply"]["id"]
+                            list_title = message["interactive"]["list_reply"]["title"]
+                            print(
+                                f"📋 User selected list item: {list_title} ({list_id}) from {sender_phone}"
+                            )
+
+                            # They picked a month, now ask how they paid!
+                            send_payment_mode_buttons(sender_phone)
             return HttpResponse("EVENT_RECEIVED", status=200)
 
         except Exception as e:
@@ -333,6 +345,47 @@ def send_month_selection_list(recipient_phone):
     print(f"📋 Sending month list menu to {recipient_phone}...")
     response = requests.post(url, headers=headers, json=payload)
 
+
     # DEBUG: Let's catch any Meta errors so we aren't blind!
     print(f"📤 LIST MENU RESPONSE CODE: {response.status_code}")
     print(f"📝 LIST MENU DETAILS: {response.text}")
+# 6. THE PAYMENT MODE MENU (Cash, Bank, Mobile)
+def send_payment_mode_buttons(recipient_phone):
+    ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
+    PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+
+    url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
+
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": recipient_phone,
+        "type": "interactive",
+        "interactive": {
+            "type": "button",
+            "body": {"text": "Great! 💰 Finally, how was this $10 paid?"},
+            "action": {
+                "buttons": [
+                    {
+                        "type": "reply",
+                        "reply": {"id": "btn_pay_cash", "title": "💵 Cash"},
+                    },
+                    {
+                        "type": "reply",
+                        "reply": {"id": "btn_pay_bank", "title": "🏦 Bank Transfer"},
+                    },
+                    {
+                        "type": "reply",
+                        "reply": {"id": "btn_pay_mobile", "title": "📱 Mobile Money"},
+                    },
+                ]
+            },
+        },
+    }
+
+    print(f"🔘 Sending payment mode buttons to {recipient_phone}...")
+    requests.post(url, headers=headers, json=payload)
