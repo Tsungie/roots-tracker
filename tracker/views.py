@@ -152,11 +152,10 @@ def whatsapp_webhook(request):
                         send_receipt_confirmation_button(sender_phone)
                         download_whatsapp_media(image_id)
 
-                    
                     # Route C: It's an interactive button OR list click!
                     elif message_type == "interactive":
 
-                        # 1. Did they click a simple button? (Yes/No)
+                        # 1. Did they click a simple button? (Yes/No OR Payment Mode)
                         if "button_reply" in message["interactive"]:
                             button_id = message["interactive"]["button_reply"]["id"]
                             print(
@@ -170,6 +169,17 @@ def whatsapp_webhook(request):
                                 send_whatsapp_reply(
                                     sender_phone,
                                     "No problem! I will toss that photo in the trash and pretend I didn't see it. 🗑️",
+                                )
+
+                            # Catch the final Payment Mode click!
+                            elif button_id in [
+                                "btn_pay_cash",
+                                "btn_pay_bank",
+                                "btn_pay_mobile",
+                            ]:
+                                send_whatsapp_reply(
+                                    sender_phone,
+                                    "Boom! 💥 Your $10 payment receipt has been successfully submitted to the Roots Command Center for approval. Thank you!",
                                 )
 
                         # 2. Did they select an item from a list? (The Month)
