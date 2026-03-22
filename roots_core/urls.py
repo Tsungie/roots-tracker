@@ -6,11 +6,14 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # 1. The Lobby (Homepage)
     path("", views.select_group, name="select_group"),
-    path("", views.upload_receipt, name="upload_receipt"),  # The main upload link
+    # 2. The Group Command Center
+    path("dashboard/", views.dashboard, name="dashboard"),
+    # 3. The Bulk Upload Tool
+    path("upload/", views.upload_receipt, name="upload_receipt"),
     path("success/", views.upload_success, name="upload_success"),
+    # 4. Reports & Webhooks
+    path("download-summary/", views.download_master_summary, name="download_summary"),
     path("whatsapp/webhook/", views.whatsapp_webhook, name="whatsapp_webhook"),
-    path('download-summary/', views.download_master_summary, name='download_summary'),
-    path('whatsapp/webhook/', views.whatsapp_webhook, name='whatsapp_webhook'),
-
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

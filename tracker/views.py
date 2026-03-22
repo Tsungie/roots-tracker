@@ -289,13 +289,26 @@ def select_group(request):
     if request.method == "POST":
         group_id = request.POST.get("group_id")
         request.session["active_group_id"] = group_id
-        return redirect(
-            "upload_receipt"
-        )  # We will redirect this to a real Dashboard soon!
+        return redirect("dashboard")  # We will redirect this to a real Dashboard soon!
 
     # 2. If they are just arriving, show them all the available groups
     groups = Group.objects.all()
     return render(request, "tracker/select_group.html", {"groups": groups})
+
+
+def dashboard(request):
+    # 1. Read the "sticky note" from the session
+    group_id = request.session.get("active_group_id")
+
+    # 2. If they somehow bypassed the lobby, kick them back to the front desk!
+    if not group_id:
+        return redirect("select_group")
+
+    # 3. Grab the specific group from the database
+    active_group = Group.objects.filter(id=group_id).first()
+
+    # 4. Render the new dashboard page
+    return render(request, "tracker/dashboard.html", {"active_group": active_group})
 
 
 # 3. THE OUTBOX (Sending a custom text message back)

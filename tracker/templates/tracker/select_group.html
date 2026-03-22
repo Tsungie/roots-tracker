@@ -60,7 +60,7 @@
         <h1>👋 Welcome, Admin!</h1>
         <p>Select a workspace to manage your group.</p>
 
-        <form method="POST">
+        <form method="POST" action="{% url 'select_group' %}">
             {% csrf_token %}
             
             {% for group in groups %}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Roots</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f7f6; padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .header { color: #8e44ad; }
+        .nav-btn { background: #3498db; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1 class="header">📊 Dashboard: {{ active_group.name }}</h1>
+        <p>Welcome to the command center. All records below are filtered strictly for this workspace.</p>
+        
+        <br>
+        <a href="{% url 'select_group' %}" class="nav-btn">🔙 Switch Group</a>
+        <a href="{% url 'upload_receipt' %}" class="nav-btn" style="background: #2ecc71;">📸 Upload Bulk Receipts</a>
+    </div>
+
+</body>
+</html>
