@@ -141,7 +141,7 @@ def export_member_summary_pdf(modeladmin, request, queryset):
 # 2. REGISTER STANDARD MODELS
 # ==========================================
 
-admin.site.register(Meeting)
+
 admin.site.register(Attendance)
 admin.site.register(Group)
 admin.site.register(Member)
