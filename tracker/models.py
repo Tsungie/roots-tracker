@@ -53,11 +53,9 @@ class Member(models.Model):
 
 
 class Topic(models.Model):
-    group = models.ForeignKey(
-        Group, on_relative_name="topics", on_delete=models.CASCADE
-    )
-    title = models.CharField(max_length=200)  # e.g., "L1: Cause & Effect"
-    order = models.PositiveIntegerField(default=1)  # To keep them in L1, L2, L3 order
+    group = models.ForeignKey(Group, related_name="topics", on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    order = models.PositiveIntegerField(default=1)
 
     class Meta:
         ordering = ["order"]
