@@ -161,10 +161,9 @@ def whatsapp_webhook(request):
                         )
 
                         if button_id == "btn_yes_receipt":
-                            send_whatsapp_reply(
-                                sender_phone,
-                                "Perfect! 📝 Now, which month are you paying for? (I will give you a list of months to pick from in our next update!)",
-                            )
+                            # Send them the popup list of months!
+                            send_month_selection_list(sender_phone),
+                            
 
                         elif button_id == "btn_no_receipt":
                             send_whatsapp_reply(
@@ -285,5 +284,52 @@ def send_receipt_confirmation_button(recipient_phone):
         },
     }
 
+
     print(f"🔘 Sending interactive buttons to {recipient_phone}...")
+    requests.post(url, headers=headers, json=payload)
+# 5. THE LIST MENU (Asking for the Month)
+def send_month_selection_list(recipient_phone):
+    ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
+    PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+
+    url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
+
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+
+    # We create a list of all 12 months
+    month_rows = [
+        {"id": "month_jan", "title": "January"},
+        {"id": "month_feb", "title": "February"},
+        {"id": "month_mar", "title": "March"},
+        {"id": "month_apr", "title": "April"},
+        {"id": "month_may", "title": "May"},
+        {"id": "month_jun", "title": "June"},
+        {"id": "month_jul", "title": "July"},
+        {"id": "month_aug", "title": "August"},
+        {"id": "month_sep", "title": "September"},
+        {"id": "month_oct", "title": "October"},
+        {"id": "month_nov", "title": "November"},
+        {"id": "month_dec", "title": "December"},
+    ]
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": recipient_phone,
+        "type": "interactive",
+        "interactive": {
+            "type": "list",
+            "header": {"type": "text", "text": "📅 Payment Month"},
+            "body": {"text": "Perfect! Which month is this $10 receipt paying for?"},
+            "footer": {"text": "Roots Command Center"},
+            "action": {
+                "button": "Tap to Select Month",
+                "sections": [{"title": "2026 Months", "rows": month_rows}],
+            },
+        },
+    }
+
+    print(f"📋 Sending month list menu to {recipient_phone}...")
     requests.post(url, headers=headers, json=payload)
