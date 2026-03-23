@@ -144,13 +144,15 @@
 <body>
 
 <div class="attendance-container">
-    <div class="brand-header">
-        <img src="/media/roots-logo.png" alt="Roots Logo">
-        <div>
-            <h1 style="margin:0; color: var(--roots-purple);">Attendance Register</h1>
-            <p style="margin:0; opacity: 0.7;">Group: {{ active_group.name }}</p>
-        </div>
+   <div class="brand-header">
+    <img src="/media/roots-logo.png" alt="Roots Logo">
+    <div>
+        <h1 style="margin:0; color: var(--roots-purple);">Attendance Register</h1>
+        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: var(--roots-brown); font-size: 0.9rem;">
+            ← Back to Dashboard
+        </a>
     </div>
+</div>
 
     <form method="POST">
         {% csrf_token %}

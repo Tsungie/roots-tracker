@@ -1,0 +1,10 @@
+<form method="POST">
+    {% csrf_token %}
+    <label>First Name</label>
+    <input type="text" name="first_name" value="{{ member.first_name }}">
+    
+    <label>Phone Number</label>
+    <input type="text" name="phone_number" value="{{ member.phone_number }}">
+    
+    <button type="submit" class="save-btn">Update Member Profile</button>
+</form>

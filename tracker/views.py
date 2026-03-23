@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db import IntegrityError
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -84,6 +84,72 @@ def mark_attendance(request):
             "today": timezone.now().date().isoformat(),
         },
     )
+
+
+def meeting_detail(request, meeting_id):
+    meeting = get_object_or_404(Meeting, id=meeting_id)
+    # Get all existing attendance records for this meeting
+    attendance_records = Attendance.objects.filter(meeting=meeting)
+
+    if request.method == "POST":
+        for record in attendance_records:
+            record.mode = request.POST.get(f"mode_{record.member.id}")
+            record.comment = request.POST.get(f"comment_{record.member.id}")
+            record.save()
+        return redirect("dashboard")
+
+    return render(
+        request,
+        "tracker/meeting_detail.html",
+        {
+            "meeting": meeting,
+            "attendance_records": attendance_records,
+            "topics": Topic.objects.all(),
+        },
+    )
+
+
+def edit_member(request, member_id):
+    member = get_object_or_404(Member, id=member_id)
+    if request.method == "POST":
+        member.first_name = request.POST.get("first_name")
+        member.last_name = request.POST.get("last_name")
+        member.phone_number = request.POST.get("phone_number")
+        # Add other fields as needed
+        member.save()
+        return redirect("dashboard")
+
+    return render(request, "tracker/edit_member.html", {"member": member})
+
+
+def manage_member(request, member_id=None):
+    member = get_object_or_404(Member, id=member_id) if member_id else None
+
+    if request.method == "POST":
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        phone = request.POST.get("phone_number")
+
+        if member:  # Updating existing
+            member.first_name, member.last_name, member.phone_number = (
+                first_name,
+                last_name,
+                phone,
+            )
+            member.save()
+        else:  # Creating new
+            group_id = request.session.get("active_group_id")
+            Member.objects.create(
+                first_name=first_name,
+                last_name=last_name,
+                phone_number=phone,
+                group_id=group_id,
+            )
+
+        return redirect("dashboard")
+
+    return render(request, "tracker/manage_member.html", {"member": member})
+
 
 
 def download_summary_summary(request):
