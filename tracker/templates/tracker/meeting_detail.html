@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Meeting Detail | R.O.O.T.S</title>
+    <style>
+        :root { --roots-purple: #8e44ad; --roots-brown: #5d4037; --roots-bg: #fdfaf6; }
+        body { background-color: var(--roots-bg); font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .attendance-container { max-width: 900px; margin: 20px auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); border-top: 8px solid var(--roots-purple); }
+        .brand-header { display: flex; align-items: center; gap: 25px; padding-bottom: 25px; border-bottom: 2px solid #f1f1f1; margin-bottom: 30px; }
+        .brand-header img { height: 80px; }
+        .session-info { background: #f9f9f9; padding: 20px; border-radius: 12px; margin-bottom: 30px; border-left: 5px solid var(--roots-purple); }
+        .attendance-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        .attendance-row td { background: #fff; padding: 15px 10px; border-top: 1px solid #f1f1f1; border-bottom: 1px solid #f1f1f1; }
+        .attendance-row td:first-child { border-left: 1px solid #f1f1f1; border-radius: 12px 0 0 12px; font-weight: 600; }
+        .attendance-row td:last-child { border-right: 1px solid #f1f1f1; border-radius: 0 12px 12px 0; }
+        select, input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .save-btn { background: var(--roots-purple); color: white; padding: 18px 50px; border: none; border-radius: 35px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: block; margin: 30px auto 0; }
+    </style>
+</head>
+<body>
+
+<div class="attendance-container">
+    <div class="brand-header">
+        <img src="/media/roots-logo.png" alt="Roots Logo">
+        <div>
+            <h1 style="margin:0; color: var(--roots-purple);">Review Register</h1>
+            <a href="{% url 'dashboard' %}" style="text-decoration: none; color: #7f8c8d;">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="session-info">
+        <h3 style="margin:0; color: var(--roots-brown);">Session: {{ meeting.topic.title|default:"No Topic Set" }}</h3>
+        <p style="margin:5px 0 0 0; opacity: 0.7;">Held on {{ meeting.date|date:"F d, Y" }}</p>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <table class="attendance-table">
+            <thead>
+                <tr style="text-align: left; color: #95a5a6; font-size: 0.8rem;">
+                    <th>MEMBER NAME</th>
+                    <th>STATUS</th>
+                    <th>COMMENTS / REASONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in attendance_records %}
+                <tr class="attendance-row">
+                    <td>{{ record.member.first_name }} {{ record.member.last_name }}</td>
+                    <td>
+                        <select name="mode_{{ record.member.id }}">
+                            <option value="physical" {% if record.mode == 'physical' %}selected{% endif %}>Physical</option>
+                            <option value="online" {% if record.mode == 'online' %}selected{% endif %}>Online</option>
+                            <option value="absent" {% if record.mode == 'absent' %}selected{% endif %}>Absent</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" name="comment_{{ record.member.id }}" value="{{ record.comment|default:'' }}" placeholder="Notes...">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit" class="save-btn">✅ Update Attendance Records</button>
+    </form>
+</div>
+
+</body>
+</html>

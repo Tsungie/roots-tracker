@@ -283,25 +283,38 @@
           <h2>👥 Members</h2>
           <a href="#" class="action-btn"> + Add New Member </a>
         </div>
-        <input type="text" id="memberSearch" onkeyup="filterTable('memberSearch', 'memberTable')" 
-       placeholder="🔍 Search for a sister..." 
-       style="padding: 10px; border-radius: 20px; border: 1px solid #ddd; width: 300px; margin-bottom: 15px;">
+        <input
+          type="text"
+          id="memberSearch"
+          onkeyup="filterTable('memberSearch', 'memberTable')"
+          placeholder="🔍 Search for a sister..."
+          style="
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            width: 300px;
+            margin-bottom: 15px;
+          "
+        />
 
-<script>
-function filterTable(inputId, tableId) {
-    let input = document.getElementById(inputId);
-    let filter = input.value.toUpperCase();
-    let tr = document.getElementById(tableId).getElementsByTagName("tr");
+        <script>
+          function filterTable(inputId, tableId) {
+            let input = document.getElementById(inputId);
+            let filter = input.value.toUpperCase();
+            let tr = document
+              .getElementById(tableId)
+              .getElementsByTagName("tr");
 
-    for (let i = 1; i < tr.length; i++) {
-        let td = tr[i].getElementsByTagName("td")[0]; // Searches the Name column
-        if (td) {
-            let txtValue = td.textContent || td.innerText;
-            tr[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
-        }
-    }
-}
-</script>
+            for (let i = 1; i < tr.length; i++) {
+              let td = tr[i].getElementsByTagName("td")[0]; // Searches the Name column
+              if (td) {
+                let txtValue = td.textContent || td.innerText;
+                tr[i].style.display =
+                  txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+              }
+            }
+          }
+        </script>
         <table class="roots-table">
           <thead>
             <tr>
@@ -314,6 +327,15 @@ function filterTable(inputId, tableId) {
           <tbody>
             {% for member in members %}
             <tr>
+              <td>
+                {% if member.attendance_status == 'At Risk' %}
+                <span style="color: #e74c3c; font-weight: bold"
+                  >⚠️ Missing</span
+                >
+                {% else %}
+                <span style="color: #27ae60">✅ Active</span>
+                {% endif %}
+              </td>
               <td style="font-weight: 600">
                 {{ member.first_name }} {{ member.last_name }}
               </td>
