@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% if member %}Edit{% else %}Add{% endif %} Member | R.O.O.T.S</title>
+    <style>
+        :root { --roots-purple: #8e44ad; --roots-bg: #fdfaf6; }
+        body { background: var(--roots-bg); font-family: sans-serif; padding: 20px; }
+        .form-card { max-width: 500px; margin: 40px auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 8px solid var(--roots-purple); }
+        .brand-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .brand-header img { height: 60px; }
+        input { width: 100%; padding: 12px; margin: 10px 0 20px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .save-btn { background: var(--roots-purple); color: white; width: 100%; padding: 15px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <div class="brand-header">
+            <img src="/media/roots-logo.png" alt="Logo">
+            <h2 style="color: var(--roots-purple); margin:0;">{% if member %}Edit Sister{% else %}Add New Sister{% endif %}</h2>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <label>First Name</label>
+            <input type="text" name="first_name" value="{{ member.first_name|default:'' }}" required>
+            
+            <label>Last_Name</label>
+            <input type="text" name="last_name" value="{{ member.last_name|default:'' }}" required>
+            
+            <label>Phone Number</label>
+            <input type="text" name="phone_number" value="{{ member.phone_number|default:'' }}" placeholder="+263...">
+            
+            <button type="submit" class="save-btn">✨ Save Member Details</button>
+        </form>
+        <p style="text-align: center; margin-top: 20px;">
+            <a href="{% url 'dashboard' %}" style="color: #7f8c8d; text-decoration: none;">← Back to Dashboard</a>
+        </p>
+    </div>
+</body>
+</html>
