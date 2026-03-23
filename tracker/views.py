@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from datetime import date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import IntegrityError
 from reportlab.lib import colors
@@ -480,61 +481,48 @@ def select_group(request):
 
 def dashboard(request):
     group_id = request.session.get("active_group_id")
-    
-    if not group_id:
-        return redirect("select_group")
+    members = Member.objects.filter(group_id=group_id)
+    meetings = Meeting.objects.filter(group_id=group_id).order_by("-date")
 
-    # Pre-load all linked data (prefetch_related) to make the page load faster!
-    active_group = Group.objects.prefetch_related("members", "meetings").get(
-        id=group_id
-    )
+    # 1. Total Stats for the top of the page
+    total_present = Attendance.objects.filter(
+        meeting__group_id=group_id, mode__in=["physical", "online"]
+    ).count()
+    total_absent = Attendance.objects.filter(
+        meeting__group_id=group_id, mode="absent"
+    ).count()
 
-    # Load all members and meetings, ordered nicely
-    members = active_group.members.all().order_by("last_name")
-    meetings = active_group.meetings.all().order_by(
-        "-date"
-    )  # Order by latest meeting first!
+    # 2. Prep Member Data for the Summary Table
+    current_year = date.today().year
+    # Define which months we expect payment for (e.g., Jan to current month)
+    months_to_check = range(1, date.today().month + 1)
 
-    # 1. Payment Data (Current Month)
-    current_month = timezone.now().month
-    current_year = timezone.now().year
-
-    total_members = active_group.members.filter(is_exempt_from_paying=False).count()
-    paid_count = (
-        Payment.objects.filter(
-            member__group=active_group,
-            month=current_month,
-            year=current_year,
-            status="approved",
+    for member in members:
+        # Get paid months for this year
+        paid_months = list(
+            Payment.objects.filter(
+                member=member, year=current_year, status="approved"
+            ).values_list("month", flat=True)
         )
-        .values("member")
-        .distinct()
-        .count()
-    )
 
-    unpaid_count = max(0, total_members - paid_count)
+        member.paid_list = [m for m in paid_months]
+        member.unpaid_list = [m for m in months_to_check if m not in paid_months]
 
-    # 2. Attendance Data (Last 5 Meetings)
-    last_5_meetings = Meeting.objects.filter(group=active_group).order_by("-date")[:5][
-        ::-1
-    ]
-    meeting_labels = [m.date.strftime("%b %d") for m in last_5_meetings]
-    attendance_counts = [
-        m.attendees.filter(mode__in=["physical", "online"]).count()
-        for m in last_5_meetings
-    ]
+        # Get Attendance with Topics
+        member.history = (
+            Attendance.objects.filter(member=member)
+            .select_related("meeting__topic")
+            .order_by("-meeting__date")
+        )
 
     return render(
         request,
         "tracker/dashboard.html",
         {
-            "active_group": active_group,
             "members": members,
             "meetings": meetings,
-            "paid_count": paid_count,
-            "unpaid_count": unpaid_count,
-            "meeting_labels": json.dumps(meeting_labels),
-            "attendance_counts": json.dumps(attendance_counts),
+            "total_present": total_present,
+            "total_absent": total_absent,
         },
     )
 
