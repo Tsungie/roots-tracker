@@ -475,6 +475,7 @@ def select_group(request):
 
 def dashboard(request):
     group_id = request.session.get("active_group_id")
+    
     if not group_id:
         return redirect("select_group")
 

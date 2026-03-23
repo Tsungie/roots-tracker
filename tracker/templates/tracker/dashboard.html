@@ -391,6 +391,7 @@
               <th>Date</th>
               <th>Topic</th>
               <th>Attendees</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -410,6 +411,11 @@
               </td>
               <td>{{ meeting.topic.title|default:"(No topic)" }}</td>
               <td>{{ meeting.attendance_set.count }} Attended</td>
+              <td>
+        <a href="{% url 'meeting_detail' meeting.id %}" title="View/Edit Register" style="text-decoration: none; font-size: 1.2rem;">
+            👁️ <span style="font-size: 0.9rem; color: var(--roots-purple); vertical-align: middle;">View/Edit</span>
+        </a>
+    </td>
             </tr>
             {% empty %}
             <tr>
