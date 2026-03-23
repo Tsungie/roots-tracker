@@ -88,11 +88,16 @@ def mark_attendance(request):
 
 def meeting_detail(request, meeting_id):
     meeting = get_object_or_404(Meeting, id=meeting_id)
-    # Get all existing attendance records for this meeting
     attendance_records = Attendance.objects.filter(meeting=meeting)
+
+    # Calculate counts in Python (where math is easy!)
+    present_count = attendance_records.filter(mode__in=["physical", "online"]).count()
+    absent_count = attendance_records.filter(mode="absent").count()
 
     if request.method == "POST":
         for record in attendance_records:
+            # IMPORTANT: Check your model! Is it record.mode or record.status?
+            # If your model uses 'status', change 'mode' below to 'status'
             record.mode = request.POST.get(f"mode_{record.member.id}")
             record.comment = request.POST.get(f"comment_{record.member.id}")
             record.save()
@@ -104,7 +109,8 @@ def meeting_detail(request, meeting_id):
         {
             "meeting": meeting,
             "attendance_records": attendance_records,
-            "topics": Topic.objects.all(),
+            "present_count": present_count,
+            "absent_count": absent_count,
         },
     )
 
@@ -149,7 +155,6 @@ def manage_member(request, member_id=None):
         return redirect("dashboard")
 
     return render(request, "tracker/manage_member.html", {"member": member})
-
 
 
 def download_summary_summary(request):
