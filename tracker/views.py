@@ -1,12 +1,10 @@
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib import colors
 from datetime import date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import IntegrityError
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 import io
@@ -21,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Count, Sum
 from django.utils import timezone
 import calendar
+from docx import Document
 
 #
 
@@ -310,6 +309,76 @@ def download_summary_summary(request):
         f'attachment; filename="{active_group.name}_Summary.pdf"'
     )
     response.write(pdf)
+    return response
+
+
+def export_status_pdf(request):
+    group_id = request.session.get("active_group_id")
+    members = Member.objects.filter(group_id=group_id)
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="Roots_Status_Summary.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=landscape(letter))
+    elements = []
+
+    # Table Headers
+    data = [["Member Name", "Total Paid", "Phone Number"]]
+
+    for member in members:
+        data.append(
+            [
+                f"{member.first_name} {member.last_name}",
+                f"${member.total_approved_payments}",
+                member.phone_number,
+            ]
+        )
+
+    table = Table(data, colWidths=[200, 150, 200])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#8e44ad")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ]
+        )
+    )
+
+    elements.append(table)
+    doc.build(elements)
+    return response
+
+
+def export_status_word(request):
+    group_id = request.session.get("active_group_id")
+    members = Member.objects.filter(group_id=group_id)
+
+    document = Document()
+    document.add_heading("R.O.O.T.S Member Status Summary", 0)
+
+    table = document.add_table(rows=1, cols=3)
+    table.style = "Table Grid"
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = "Member Name"
+    hdr_cells[1].text = "Total Paid"
+    hdr_cells[2].text = "Phone Number"
+
+    for member in members:
+        row_cells = table.add_row().cells
+        row_cells[0].text = f"{member.first_name} {member.last_name}"
+        row_cells[1].text = f"${member.total_approved_payments}"
+        row_cells[2].text = str(member.phone_number)
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    response["Content-Disposition"] = 'attachment; filename="Roots_Status_Summary.docx"'
+    document.save(response)
+
     return response
 
 

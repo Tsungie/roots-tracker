@@ -16,6 +16,8 @@ urlpatterns = [
     path("success/", views.upload_success, name="upload_success"),
     # 4. Reports & Webhooks
     path("download-summary/", views.download_summary_summary, name="download_summary"),
+    path("export/pdf/", views.export_status_pdf, name="export_pdf"),
+    path("export/word/", views.export_status_word, name="export_word"),
     path("meeting/<int:meeting_id>/", views.meeting_detail, name="meeting_detail"),
     path("member/add/", views.manage_member, name="add_member"),
     path("member/edit/<int:member_id>/", views.manage_member, name="edit_member"),

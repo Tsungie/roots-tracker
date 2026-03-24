@@ -226,12 +226,12 @@
             >📄 PDF Report</a
           >
         </li>
- <li class="nav-item">
-          <a href="{% url 'mark_attendance' %}" class="nav-link"
-            > ✨ Mark Attendance</a
+        <li class="nav-item">
+          <a href="{% url 'mark_attendance' %}" class="nav-link">
+            ✨ Mark Attendance</a
           >
         </li>
-       <!--  <li class="nav-item" style="margin-top: 20px">
+        <!--  <li class="nav-item" style="margin-top: 20px">
           <a
             href="{% url 'mark_attendance' %}"
             style="
@@ -375,7 +375,7 @@
               >📄 Export PDF</a
             >
             <a
-              href="#"
+              href="export_word"
               class="action-btn"
               style="background: #2980b9; padding: 8px 15px; font-size: 0.85rem"
               >📝 Export Word</a
@@ -424,13 +424,13 @@
 
               <td style="padding: 15px; vertical-align: top">
                 <p style="margin-top: 0">
-                  <strong>Total: ${{ member.total_approved_payments }}</strong>
+                  <strong>Total Paid: ${{ member.total_approved_payments }}</strong>
                 </p>
                 <div style="font-size: 0.85rem">
                   <span style="color: green">✔ Paid:</span>
                   {{ member.paid_list|join:", "|default:"None" }}
                   <br />
-                  <span style="color: red">✘ Ow:</span>
+                  <span style="color: red">✘ Owing:</span>
                   {{ member.unpaid_list|join:", "|default:"None" }}
                 </div>
               </td>
@@ -441,8 +441,8 @@
                 <span style="color: var(--roots-purple)">{{ item.topic }}</span>
                 -
                 <span style="color: {{ item.color }}; font-weight: 500;">
-                  {{ item.status }}
-                </span><br />
+                  {{ item.status }} </span
+                ><br />
                 {% endfor %}
               </td>
             </tr>
