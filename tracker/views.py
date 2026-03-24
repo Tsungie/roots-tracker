@@ -119,7 +119,7 @@ def mark_attendance(request):
             Attendance.objects.update_or_create(
                 meeting=meeting,
                 member=member,
-                defaults={"mode": mode, "comments": comment},
+                defaults={"mode": mode, "comment": comment},
             )
         return redirect("dashboard")
 
