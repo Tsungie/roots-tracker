@@ -25,4 +25,9 @@ urlpatterns = [
     path("whatsapp/webhook/", views.whatsapp_webhook, name="whatsapp_webhook"),
     path("attendance/", views.mark_attendance, name="mark_attendance"),
     path("upload-reflections/", views.upload_reflections, name="upload_reflections"),
+    path(
+        "member/<int:member_id>/write-reflection/",
+        views.write_reflection,
+        name="write_reflection",
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

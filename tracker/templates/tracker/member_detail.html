@@ -99,6 +99,9 @@
     </div>
 <div class="header-card" style="margin-top: 25px; display: block; border-left: 8px solid #2980b9;">
         <h2 style="color: #2980b9; margin-top: 0; margin-bottom: 20px;">📝 Growth Journal & Reflections</h2>
+        <a href="{% url 'write_reflection' member.id %}" class="receipt-btn" style="background: #2980b9; color: white; padding: 10px 20px;">
+            + Write New Entry
+        </a>
         
         {% for ref in reflections %}
         <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #eee;">

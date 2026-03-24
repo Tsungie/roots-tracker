@@ -1,0 +1,22 @@
+<div class="container">
+    <h1>Journal Entry for {{ member.first_name }}</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <label>Select Lesson:</label>
+        <select name="meeting_id">
+            {% for m in meetings %}
+                <option value="{{ m.id }}">{{ m.topic.title }} ({{ m.date }})</option>
+            {% endfor %}
+        </select>
+
+        <h3>Questions & Reflections</h3>
+        <p style="font-size: 0.8rem; color: #666;">Include aha moments, foolishness areas, and generational impacts [cite: 67-73].</p>
+        <textarea name="answers" rows="10" placeholder="Type reflections here..."></textarea>
+
+        <h3>Specific Commitments</h3>
+        <p style="font-size: 0.8rem; color: #666;">List the three specific wisdom steps[cite: 75].</p>
+        <textarea name="commitments" rows="5" placeholder="Type commitments here..."></textarea>
+
+        <button type="submit" class="save-btn">💾 Save to Profile</button>
+    </form>
+</div>

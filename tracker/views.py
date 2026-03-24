@@ -979,3 +979,28 @@ def member_detail(request, member_id):
             "reflections": reflections,  # 👈 Make sure to pass it here!
         },
     )
+
+
+def write_reflection(request, member_id):
+    member = get_object_or_404(Member, id=member_id)
+    meetings = Meeting.objects.filter(group=member.group).order_by("-date")
+
+    if request.method == "POST":
+        meeting_id = request.POST.get("meeting_id")
+        meeting = get_object_or_404(Meeting, id=meeting_id)
+
+        LessonReflection.objects.update_or_create(
+            member=member,
+            meeting=meeting,
+            defaults={
+                "my_answers": request.POST.get("answers"),
+                "my_commitments": request.POST.get("commitments"),
+            },
+        )
+        return redirect("member_detail", member_id=member.id)
+
+    return render(
+        request,
+        "tracker/write_reflection.html",
+        {"member": member, "meetings": meetings},
+    )
