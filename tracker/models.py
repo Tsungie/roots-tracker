@@ -200,3 +200,18 @@ class WhatsAppDraft(models.Model):
 
     def __str__(self):
         return f"Draft for {self.phone_number}"
+
+
+class LessonReflection(models.Model):
+    member = models.ForeignKey("Member", on_delete=models.CASCADE)
+    meeting = models.ForeignKey("Meeting", on_delete=models.CASCADE)
+
+    # The sister's actual answers:
+    my_answers = models.TextField(blank=True)
+    my_commitments = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Prevents a sister from accidentally creating 5 journals for the same lesson
+        unique_together = ("member", "meeting")
