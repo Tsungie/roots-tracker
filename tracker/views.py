@@ -496,7 +496,8 @@ def dashboard(request):
     # 2. Prep Member Data for the Summary Table
     current_year = date.today().year
     # Define which months we expect payment for (e.g., Jan to current month)
-    months_to_check = range(1, date.today().month + 1)
+    START_MONTH = 2
+    months_to_check = range(START_MONTH, date.today().month + 1)
 
     for member in members:
         # Get paid months for this year (these come out as numbers like 1, 2, 3)
@@ -738,3 +739,16 @@ def send_payment_mode_buttons(recipient_phone):
 
     print(f"🔘 Sending payment mode buttons to {recipient_phone}...")
     requests.post(url, headers=headers, json=payload)
+
+
+def member_detail(request, member_id):
+    member = get_object_or_404(Member, id=member_id)
+    # Get all their specific records
+    attendances = Attendance.objects.filter(member=member).order_by("-meeting__date")
+    payments = Payment.objects.filter(member=member).order_by("-year", "-month")
+
+    return render(
+        request,
+        "tracker/member_detail.html",
+        {"member": member, "attendances": attendances, "payments": payments},
+    )

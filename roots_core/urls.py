@@ -18,6 +18,7 @@ urlpatterns = [
     path("meeting/<int:meeting_id>/", views.meeting_detail, name="meeting_detail"),
     path("member/add/", views.manage_member, name="add_member"),
     path("member/edit/<int:member_id>/", views.manage_member, name="edit_member"),
+    path("member/<int:member_id>/", views.member_detail, name="member_detail"),
     path("whatsapp/webhook/", views.whatsapp_webhook, name="whatsapp_webhook"),
     path("attendance/", views.mark_attendance, name="mark_attendance"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

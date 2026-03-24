@@ -206,19 +206,53 @@
         <div class="roots-logo">R.O.O.T.S</div>
         <div class="roots-sub-logo">Ladies Discipleship</div>
       </div>
-     <ul class="nav-list">
-        <li class="nav-item"><a href="{% url 'dashboard' %}" class="nav-link active">📊 Dashboard</a></li>
-        <li class="nav-item"><a href="/admin/tracker/member/" class="nav-link">👥 Members</a></li>
-        <li class="nav-item"><a href="/admin/tracker/meeting" class="nav-link">📝 Meetings</a></li>
-        <li class="nav-item"><a href="/admin/tracker/payment/" class="nav-link">💳 Payments</a></li>
-        <li class="nav-item"><a href="{% url 'download_summary' %}" class="nav-link">📄 PDF Report</a></li>
-        
-        <li class="nav-item" style="margin-top: 20px;">
-          <a href="{% url 'mark_attendance' %}" style="background: var(--roots-purple); color: white; display: block; padding: 12px 15px; border-radius: 8px; text-align: center; font-weight: bold; text-decoration: none; box-shadow: 0 4px 6px rgba(142, 68, 173, 0.2);">
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="{% url 'dashboard' %}" class="nav-link active"
+            >📊 Dashboard</a
+          >
+        </li>
+        <li class="nav-item">
+          <a href="/admin/tracker/member/" class="nav-link">👥 Members</a>
+        </li>
+        <li class="nav-item">
+          <a href="/admin/tracker/meeting" class="nav-link">📝 Meetings</a>
+        </li>
+        <li class="nav-item">
+          <a href="/admin/tracker/payment/" class="nav-link">💳 Payments</a>
+        </li>
+        <li class="nav-item">
+          <a href="{% url 'download_summary' %}" class="nav-link"
+            >📄 PDF Report</a
+          >
+        </li>
+
+        <li class="nav-item" style="margin-top: 20px">
+          <a
+            href="{% url 'mark_attendance' %}"
+            style="
+              background: var(--roots-purple);
+              color: white;
+              display: block;
+              padding: 12px 15px;
+              border-radius: 8px;
+              text-align: center;
+              font-weight: bold;
+              text-decoration: none;
+              box-shadow: 0 4px 6px rgba(142, 68, 173, 0.2);
+            "
+          >
             ✨ Mark Attendance
           </a>
         </li>
-        <li class="nav-item" style="margin-top: 30px"><a href="{% url 'select_group' %}" class="nav-link" style="color: var(--text-light)">🔄 Switch Workspace</a></li>
+        <li class="nav-item" style="margin-top: 30px">
+          <a
+            href="{% url 'select_group' %}"
+            class="nav-link"
+            style="color: var(--text-light)"
+            >🔄 Switch Workspace</a
+          >
+        </li>
       </ul>
     </nav>
 
@@ -318,7 +352,32 @@
           </div>
         </div>
 
-        <h2 style="color: var(--roots-purple)">Member Status Summary</h2>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+          "
+        >
+          <h2 style="color: var(--roots-purple); margin: 0">
+            Member Status Summary
+          </h2>
+          <div>
+            <a
+              href="#"
+              class="action-btn"
+              style="background: #e74c3c; padding: 8px 15px; font-size: 0.85rem"
+              >📄 Export PDF</a
+            >
+            <a
+              href="#"
+              class="action-btn"
+              style="background: #2980b9; padding: 8px 15px; font-size: 0.85rem"
+              >📝 Export Word</a
+            >
+          </div>
+        </div>
         <table
           class="attendance-table"
           style="
@@ -345,11 +404,24 @@
             {% for member in members %}
             <tr style="border-bottom: 1px solid #eee">
               <td style="padding: 15px; vertical-align: top">
-                <strong>{{ member.first_name }} {{ member.last_name }}</strong>
+                <a
+                  href="{% url 'member_detail' member.id %}"
+                  style="
+                    color: var(--roots-purple);
+                    text-decoration: none;
+                    font-size: 1.1rem;
+                  "
+                >
+                  <strong
+                    >{{ member.first_name }} {{ member.last_name }}</strong
+                  >
+                </a>
               </td>
 
-           <td style="padding: 15px; vertical-align: top">
-                <p style="margin-top: 0;"><strong>Total: ${{ member.total_approved_payments }}</strong></p>
+              <td style="padding: 15px; vertical-align: top">
+                <p style="margin-top: 0">
+                  <strong>Total: ${{ member.total_approved_payments }}</strong>
+                </p>
                 <div style="font-size: 0.85rem">
                   <span style="color: green">✔ Paid:</span>
                   {{ member.paid_list|join:", "|default:"None" }}
