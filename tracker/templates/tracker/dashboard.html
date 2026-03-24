@@ -369,8 +369,8 @@
                 </p>
                 <div style="font-size: 0.85rem">
                   <span style="color: green">✔ Paid:</span>
-                  {% for m in member.paid_list %} {{ m }}{% if not forloop.last
-                  %}, {% endif %} {% empty %} None {% endfor %}
+                  {% for m in member.paid_list %}{{ m }}{% if not forloop.last
+                  %}, {% endif %}
                   <br />
                   <span style="color: red">✘ Owed:</span>
                   {% for m in member.unpaid_list %} {{ m }}{% if not
