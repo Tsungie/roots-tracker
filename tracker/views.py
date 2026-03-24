@@ -9,7 +9,16 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 import io
 import requests
-from .models import Member, Meeting, Attendance, WhatsAppDraft, Payment, Group, Topic
+from .models import (
+    Member,
+    Meeting,
+    Attendance,
+    WhatsAppDraft,
+    Payment,
+    Group,
+    Topic,
+    LessonReflection,
+)
 from django.core.files import File
 from .forms import ReceiptUploadForm
 import json
@@ -92,6 +101,75 @@ def export_status_pdf(request):
     doc.build(elements)
 
     return response
+
+
+def upload_reflections(request):
+    group_id = request.session.get("active_group_id")
+    active_group = Group.objects.get(id=group_id)
+    members = Member.objects.filter(group=active_group)
+    meetings = Meeting.objects.filter(group=active_group).order_by("-date")
+
+    if request.method == "POST":
+        meeting_id = request.POST.get("meeting_id")
+        raw_text = request.POST.get("whatsapp_text")
+        meeting = get_object_or_404(Meeting, id=meeting_id)
+
+        current_member = None
+        reflections_data = {}
+
+        # Read the WhatsApp chat line by line
+        # Read the WhatsApp chat line by line
+        for line in raw_text.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+
+            found_member = None
+            line_lower = line.lower()
+
+            # SMART MATCHING: Check for the sister's first name in short lines
+            # WhatsApp name headers are usually short (under 80 characters)
+            if len(line) < 80:
+                for member in members:
+                    first_name = member.first_name.lower()
+
+                    # If "moreblessing" is in "moreblessing planted"
+                    if first_name in line_lower:
+                        found_member = member
+                        break
+
+            if found_member:
+                # We found a new speaker! Switch the lock to her.
+                current_member = found_member
+
+                # Create a blank list for her if she hasn't spoken yet
+                if current_member.id not in reflections_data:
+                    reflections_data[current_member.id] = []
+
+                # We deliberately SKIP appending 'line' here
+                # so that "Moreblessing Planted" doesn't get saved as part of her answer!
+
+            elif current_member:
+                # If no new name is found, this sentence belongs to the current speaker.
+                # We append it to her list.
+                reflections_data[current_member.id].append(line)
+
+        # Save all the sorted text into the Database!
+        for member_id, lines in reflections_data.items():
+            member = members.get(id=member_id)
+            combined_text = "\n".join(lines)
+
+            LessonReflection.objects.update_or_create(
+                member=member, meeting=meeting, defaults={"my_answers": combined_text}
+            )
+
+        return redirect("dashboard")
+
+    return render(
+        request,
+        "tracker/upload_reflections.html",
+        {"meetings": meetings, "active_group": active_group},
+    )
 
 
 def mark_attendance(request):
@@ -881,12 +959,23 @@ def send_payment_mode_buttons(recipient_phone):
 
 def member_detail(request, member_id):
     member = get_object_or_404(Member, id=member_id)
-    # Get all their specific records
     attendances = Attendance.objects.filter(member=member).order_by("-meeting__date")
     payments = Payment.objects.filter(member=member).order_by("-year", "-month")
+
+    # ADD THIS LINE to fetch the sister's journal entries:
+    reflections = (
+        LessonReflection.objects.filter(member=member)
+        .select_related("meeting__topic")
+        .order_by("-meeting__date")
+    )
 
     return render(
         request,
         "tracker/member_detail.html",
-        {"member": member, "attendances": attendances, "payments": payments},
+        {
+            "member": member,
+            "attendances": attendances,
+            "payments": payments,
+            "reflections": reflections,  # 👈 Make sure to pass it here!
+        },
     )
