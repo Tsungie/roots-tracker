@@ -363,18 +363,14 @@
                 <strong>{{ member.first_name }} {{ member.last_name }}</strong>
               </td>
 
-              <td style="padding: 15px; vertical-align: top">
-                <p style="margin-top: 0">
-                  <strong>Total: ${{ member.total_approved_payments }}</strong>
-                </p>
+           <td style="padding: 15px; vertical-align: top">
+                <p style="margin-top: 0;"><strong>Total: ${{ member.total_approved_payments }}</strong></p>
                 <div style="font-size: 0.85rem">
                   <span style="color: green">✔ Paid:</span>
-                  {% for m in member.paid_list %}{{ m }}{% if not forloop.last
-                  %}, {% endif %}
+                  {{ member.paid_list|join:", "|default:"None" }}
                   <br />
                   <span style="color: red">✘ Owed:</span>
-                  {% for m in member.unpaid_list %} {{ m }}{% if not
-                  forloop.last %}, {% endif %} {% empty %} None {% endfor %}
+                  {{ member.unpaid_list|join:", "|default:"None" }}
                 </div>
               </td>
 
