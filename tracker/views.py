@@ -1,4 +1,7 @@
 from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
 from datetime import date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import IntegrityError
@@ -45,6 +48,51 @@ def upload_receipt(request):
 
 def upload_success(request):
     return render(request, "tracker/success.html")
+
+
+def export_status_pdf(request):
+    group_id = request.session.get("active_group_id")
+    members = Member.objects.filter(group_id=group_id)
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="Roots_Status_Summary.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+
+    # Table Data Header
+    data = [["Member Name", "Total Paid", "Attendance Status"]]
+
+    for member in members:
+        # Simplified status for the PDF
+        status = "Active" if member.attendance_status != "At Risk" else "Missing"
+        data.append(
+            [
+                f"{member.first_name} {member.last_name}",
+                f"${member.total_approved_payments}",
+                status,
+            ]
+        )
+
+    # Styling the Table
+    style = TableStyle(
+        [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.purple),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 12),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+            ("GRID", (0, 0), (-1, -1), 1, colors.black),
+        ]
+    )
+
+    table = Table(data)
+    table.setStyle(style)
+    elements.append(table)
+    doc.build(elements)
+
+    return response
 
 
 def mark_attendance(request):
@@ -498,6 +546,7 @@ def dashboard(request):
     # Define which months we expect payment for (e.g., Jan to current month)
     START_MONTH = 2
     months_to_check = range(START_MONTH, date.today().month + 1)
+    latest_meetings = meetings[:5]
 
     for member in members:
         # Get paid months for this year (these come out as numbers like 1, 2, 3)
@@ -507,7 +556,6 @@ def dashboard(request):
             ).values_list("month", flat=True)
         )
 
-        # 🌟 THE MAGIC TRICK: Convert those numbers into short names (Jan, Feb, Mar)
         member.paid_list = [
             calendar.month_abbr[int(m)] for m in paid_months_numbers if m
         ]
@@ -520,12 +568,33 @@ def dashboard(request):
         ]
 
         # Get Attendance with Topics
-        member.history = (
-            Attendance.objects.filter(member=member)
-            .select_related("meeting__topic")
-            .order_by("-meeting__date")
-        )
+        attendance_dict = {
+            a.meeting_id: a
+            for a in Attendance.objects.filter(
+                member=member, meeting__in=latest_meetings
+            )
+        }
+        # Build a perfectly uniform list for every single sister
+        breakdown = []
+        for meeting in latest_meetings:
+            record = attendance_dict.get(meeting.id)
+            if record:
+                status_text = record.get_mode_display()
+                color = "red" if record.mode == "absent" else "green"
+            else:
+                status_text = "Not Marked"  # Flags if they were missed on the register!
+                color = "orange"
 
+            breakdown.append(
+                {
+                    "date": meeting.date,
+                    "topic": meeting.topic.title if meeting.topic else "No Topic",
+                    "status": status_text,
+                    "color": color,
+                }
+            )
+
+        member.recent_breakdown = breakdown
     return render(
         request,
         "tracker/dashboard.html",

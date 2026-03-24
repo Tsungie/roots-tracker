@@ -226,8 +226,12 @@
             >📄 PDF Report</a
           >
         </li>
-
-        <li class="nav-item" style="margin-top: 20px">
+ <li class="nav-item">
+          <a href="{% url 'mark_attendance' %}" class="nav-link"
+            > ✨ Mark Attendance</a
+          >
+        </li>
+       <!--  <li class="nav-item" style="margin-top: 20px">
           <a
             href="{% url 'mark_attendance' %}"
             style="
@@ -244,7 +248,7 @@
           >
             ✨ Mark Attendance
           </a>
-        </li>
+        </li> -->
         <li class="nav-item" style="margin-top: 30px">
           <a
             href="{% url 'select_group' %}"
@@ -365,7 +369,7 @@
           </h2>
           <div>
             <a
-              href="#"
+              href="export_pdf"
               class="action-btn"
               style="background: #e74c3c; padding: 8px 15px; font-size: 0.85rem"
               >📄 Export PDF</a
@@ -426,23 +430,19 @@
                   <span style="color: green">✔ Paid:</span>
                   {{ member.paid_list|join:", "|default:"None" }}
                   <br />
-                  <span style="color: red">✘ Owing:</span>
+                  <span style="color: red">✘ Ow:</span>
                   {{ member.unpaid_list|join:", "|default:"None" }}
                 </div>
               </td>
 
               <td style="padding: 15px; font-size: 0.85rem; line-height: 1.6">
-                {% for record in member.history|slice:":5" %}
-                <strong>{{ record.meeting.date|date:"M d" }}:</strong>
-                <span style="color: var(--roots-purple)"
-                  >{{ record.meeting.topic.title|default:"No Topic" }}</span
-                >
+                {% for item in member.recent_breakdown %}
+                <strong>{{ item.date|date:"M d" }}:</strong>
+                <span style="color: var(--roots-purple)">{{ item.topic }}</span>
                 -
-                <span
-                  style="color: {% if record.mode == 'absent' %}red{% else %}green{% endif %};"
-                >
-                  {{ record.get_mode_display }} </span
-                ><br />
+                <span style="color: {{ item.color }}; font-weight: 500;">
+                  {{ item.status }}
+                </span><br />
                 {% endfor %}
               </td>
             </tr>

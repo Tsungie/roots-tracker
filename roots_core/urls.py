@@ -10,6 +10,7 @@ urlpatterns = [
     path("", views.select_group, name="select_group"),
     # 2. The Group Command Center
     path("dashboard/", views.dashboard, name="dashboard"),
+    path("export-pdf/", views.export_status_pdf, name="export_pdf"),
     # 3. The Bulk Upload Tool
     path("upload/", views.upload_receipt, name="upload_receipt"),
     path("success/", views.upload_success, name="upload_success"),
