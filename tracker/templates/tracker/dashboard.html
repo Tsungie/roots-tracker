@@ -206,34 +206,19 @@
         <div class="roots-logo">R.O.O.T.S</div>
         <div class="roots-sub-logo">Ladies Discipleship</div>
       </div>
-      <ul class="nav-list">
-        <li class="nav-item">
-          <a href="{% url 'dashboard' %}" class="nav-link active"
-            >📊 Dashboard</a
-          >
+     <ul class="nav-list">
+        <li class="nav-item"><a href="{% url 'dashboard' %}" class="nav-link active">📊 Dashboard</a></li>
+        <li class="nav-item"><a href="/admin/tracker/member/" class="nav-link">👥 Members</a></li>
+        <li class="nav-item"><a href="/admin/tracker/meeting" class="nav-link">📝 Meetings</a></li>
+        <li class="nav-item"><a href="/admin/tracker/payment/" class="nav-link">💳 Payments</a></li>
+        <li class="nav-item"><a href="{% url 'download_summary' %}" class="nav-link">📄 PDF Report</a></li>
+        
+        <li class="nav-item" style="margin-top: 20px;">
+          <a href="{% url 'mark_attendance' %}" style="background: var(--roots-purple); color: white; display: block; padding: 12px 15px; border-radius: 8px; text-align: center; font-weight: bold; text-decoration: none; box-shadow: 0 4px 6px rgba(142, 68, 173, 0.2);">
+            ✨ Mark Attendance
+          </a>
         </li>
-        <li class="nav-item">
-          <a href="/admin/tracker/member/" class="nav-link">👥 Members</a>
-        </li>
-        <li class="nav-item">
-          <a href="/admin/tracker/meeting" class="nav-link">📝 Meetings</a>
-        </li>
-        <li class="nav-item">
-          <a href="/admin/tracker/payment/" class="nav-link">💳 Payments</a>
-        </li>
-        <li class="nav-item">
-          <a href="{% url 'download_summary' %}" class="nav-link"
-            >📄 PDF Report</a
-          >
-        </li>
-        <li class="nav-item" style="margin-top: 30px">
-          <a
-            href="{% url 'select_group' %}"
-            class="nav-link"
-            style="color: var(--text-light)"
-            >🔄 Switch Workspace</a
-          >
-        </li>
+        <li class="nav-item" style="margin-top: 30px"><a href="{% url 'select_group' %}" class="nav-link" style="color: var(--text-light)">🔄 Switch Workspace</a></li>
       </ul>
     </nav>
 

@@ -17,6 +17,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Count, Sum
 from django.utils import timezone
+import calendar
 
 #
 
@@ -498,15 +499,24 @@ def dashboard(request):
     months_to_check = range(1, date.today().month + 1)
 
     for member in members:
-        # Get paid months for this year
-        paid_months = list(
+        # Get paid months for this year (these come out as numbers like 1, 2, 3)
+        paid_months_numbers = list(
             Payment.objects.filter(
                 member=member, year=current_year, status="approved"
             ).values_list("month", flat=True)
         )
 
-        member.paid_list = [m for m in paid_months]
-        member.unpaid_list = [m for m in months_to_check if m not in paid_months]
+        # 🌟 THE MAGIC TRICK: Convert those numbers into short names (Jan, Feb, Mar)
+        member.paid_list = [
+            calendar.month_abbr[int(m)] for m in paid_months_numbers if m
+        ]
+
+        # Figure out the unpaid numbers, and convert those to names too
+        member.unpaid_list = [
+            calendar.month_abbr[int(m)]
+            for m in months_to_check
+            if m not in paid_months_numbers
+        ]
 
         # Get Attendance with Topics
         member.history = (
