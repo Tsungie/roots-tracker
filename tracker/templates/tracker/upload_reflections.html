@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Upload WhatsApp Reflections</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #fdfaf6;
+        padding: 40px;
+        color: #2c3e50;
+      }
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border-top: 8px solid #8e44ad;
+      }
+      select,
+      textarea {
+        width: 100%;
+        padding: 15px;
+        margin-top: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-sizing: border-box;
+        font-family: inherit;
+      }
+      .save-btn {
+        background: #8e44ad;
+        color: white;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        display: block;
+        margin-top: 20px;
+        width: 100%;
+        font-size: 1.1rem;
+      }
+      .save-btn:hover {
+        background: #732d91;
+      }
+      .help-box {
+        background: #f0f7ff;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+        border-left: 4px solid #3498db;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <a
+        href="{% url 'dashboard' %}"
+        style="text-decoration: none; color: #7f8c8d; font-weight: bold"
+        >← Back to Dashboard</a
+      >
+      <h1 style="color: #8e44ad; margin-top: 10px">Bulk Upload Reflections</h1>
+
+      <div class="help-box">
+        <strong>💡 How it works:</strong> Just copy the entire discussion from
+        WhatsApp Web and paste it below. The system will automatically scan for
+        the sisters' names (e.g., "Tsungie Ncube:" or "Agatha:") and assign
+        their paragraphs to their profiles!
+      </div>
+
+      <form method="POST">
+        {% csrf_token %}
+
+        <label><strong>1. Select the Meeting:</strong></label>
+        <select name="meeting_id" required>
+          <option value="">-- Choose a Meeting --</option>
+          {% for meeting in meetings %}
+          <option value="{{ meeting.id }}">
+            {{ meeting.date|date:"M d, Y" }} - {{
+            meeting.topic.title|default:"No Topic" }}
+          </option>
+          {% endfor %}
+        </select>
+
+        <label style="display: block; margin-top: 25px"
+          ><strong>2. Paste WhatsApp Chat:</strong></label
+        >
+        <textarea
+          name="whatsapp_text"
+          rows="15"
+          placeholder="[14:20] Tsungie Ncube: My aha moment was...&#10;&#10;[14:25] Trudy Chipfuwa: I commit to walking in wisdom..."
+          required
+        ></textarea>
+
+        <button type="submit" class="save-btn">
+          ✨ Parse and Save Reflections
+        </button>
+      </form>
+    </div>
+  </body>
+</html>
