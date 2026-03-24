@@ -3,7 +3,6 @@ from django.db import models
 from django.utils import timezone
 
 
-
 class Group(models.Model):
     name = models.CharField(
         max_length=100, unique=True, help_text="e.g., Planted 2026 CCWP05"
@@ -165,6 +164,7 @@ class Payment(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     admin_notes = models.CharField(max_length=255, blank=True, null=True)
+    receipt_file = models.FileField(upload_to="receipts/", blank=True, null=True)
 
     class Meta:
         unique_together = ["member", "month", "year"]

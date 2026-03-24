@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ member.first_name }}'s Profile | R.O.O.T.S</title>
+    <style>
+        :root { --roots-purple: #8e44ad; --roots-bg: #fdfaf6; --text-dark: #2c3e50; }
+        body { background: var(--roots-bg); font-family: 'Segoe UI', sans-serif; padding: 20px; color: var(--text-dark); }
+        .profile-container { max-width: 1000px; margin: 20px auto; }
+        .header-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 8px solid var(--roots-purple); display: flex; justify-content: space-between; align-items: center; }
+        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .data-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); height: 500px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        th { color: #7f8c8d; text-transform: uppercase; font-size: 0.8rem; background: #f9f9f9; position: sticky; top: 0; }
+        .receipt-btn { background: #e8f5e9; color: #2e7d32; padding: 5px 10px; border-radius: 5px; text-decoration: none; font-size: 0.8rem; font-weight: bold; border: 1px solid #c8e6c9; }
+        .receipt-btn:hover { background: #c8e6c9; }
+    </style>
+</head>
+<body>
+
+<div class="profile-container">
+    <div class="header-card">
+        <div>
+            <h1 style="margin: 0; color: var(--roots-purple);">{{ member.first_name }} {{ member.last_name }}</h1>
+            <p style="margin: 5px 0 0 0; color: #7f8c8d;">📞 {{ member.phone_number }} | 🏆 {{ member.get_role_display|default:"Member" }}</p>
+        </div>
+        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: #7f8c8d; font-weight: bold;">← Back to Dashboard</a>
+    </div>
+
+    <div class="grid-container">
+        <div class="data-card">
+            <h2 style="color: var(--roots-purple); margin-top: 0;">💳 Payment Vault</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date / Period</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Receipt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td><strong>Month {{ payment.month }}</strong>, {{ payment.year }}</td>
+                        <td>${{ payment.amount }}</td>
+                        <td>
+                            {% if payment.status == 'approved' %}
+                                <span style="color: green;">✅ Approved</span>
+                            {% else %}
+                                <span style="color: orange;">⏳ Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if payment.receipt_file %}
+                                <a href="{{ payment.receipt_file.url }}" target="_blank" class="receipt-btn">👁️ View</a>
+                            {% else %}
+                                <span style="color: #ccc; font-size: 0.8rem;">No File</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align: center; color: #999;">No payments recorded yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="data-card">
+            <h2 style="color: var(--roots-purple); margin-top: 0;">📅 Attendance Record</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Topic</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendances %}
+                    <tr>
+                        <td>{{ record.meeting.date|date:"M d, Y" }}</td>
+                        <td>{{ record.meeting.topic.title|default:"No Topic" }}</td>
+                        <td>
+                            {% if record.mode == 'absent' %}
+                                <span style="color: red; font-weight: bold;">Absent</span>
+                            {% else %}
+                                <span style="color: green;">{{ record.get_mode_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" style="text-align: center; color: #999;">No attendance records yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
