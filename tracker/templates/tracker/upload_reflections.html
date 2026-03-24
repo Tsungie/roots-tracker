@@ -75,14 +75,18 @@
         {% csrf_token %}
 
         <label><strong>1. Select the Meeting:</strong></label>
-        <select name="meeting_id" required>
-          <option value="">-- Choose a Meeting --</option>
-          {% for meeting in meetings %}
-          <option value="{{ meeting.id }}">
-            {{ meeting.date|date:"M d, Y" }} - {{
-            meeting.topic.title|default:"No Topic" }}
-          </option>
-          {% endfor %}
+       <select name="meeting_id" required>
+            <option value="">-- Choose a Meeting --</option>
+            {% for meeting in meetings %}
+                <option value="{{ meeting.id }}">
+                    {{ meeting.date|date:"M d, Y" }} - 
+                    {% if meeting.topic %}
+                        {{ meeting.topic.title }}
+                    {% else %}
+                        No Topic
+                    {% endif %}
+                </option>
+            {% endfor %}
         </select>
 
         <label style="display: block; margin-top: 25px"
