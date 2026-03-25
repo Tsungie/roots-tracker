@@ -1008,23 +1008,26 @@ def write_reflection(request, member_id):
 
 
 def edit_attendance(request, meeting_id):
-    # ... (keep the top part the same) ...
+    # 1. This is the line that went missing! It defines "meeting"
+    meeting = get_object_or_404(Meeting, id=meeting_id)
+
+    # 2. Grab all members for this group
+    members = Member.objects.filter(group=meeting.group)
 
     if request.method == "POST":
         for member in members:
             mode = request.POST.get(f"mode_{member.id}")
-            comment_text = request.POST.get(
-                f"comment_{member.id}"
-            )  # HTML form uses singular
+            comment_text = request.POST.get(f"comment_{member.id}")
 
+            # Saving with the correct plural 'comments'
             Attendance.objects.update_or_create(
                 meeting=meeting,
                 member=member,
-                # FIX 1: Change "comment" to "comments" here!
                 defaults={"mode": mode, "comments": comment_text},
             )
         return redirect("dashboard")
 
+    # 3. Pre-load existing records (This is where the crash happened earlier!)
     existing_records = {
         a.member_id: a for a in Attendance.objects.filter(meeting=meeting)
     }
@@ -1032,8 +1035,6 @@ def edit_attendance(request, meeting_id):
     for member in members:
         record = existing_records.get(member.id)
         member.current_mode = record.mode if record else "absent"
-
-        # FIX 2: Change record.comment to record.comments here!
         member.current_comment = record.comments if record else ""
 
     return render(
