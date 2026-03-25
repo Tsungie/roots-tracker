@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Register | R.O.O.T.S</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #fdfaf6; padding: 40px; color: #2c3e50; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .member-row { display: flex; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .member-name { flex: 2; font-weight: bold; }
+        .status-select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        .comment-input { flex: 2; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-left: 15px; }
+        .save-btn { background: #8e44ad; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="{% url 'dashboard' %}" style="text-decoration: none; color: #7f8c8d; font-weight: bold;">← Back to Dashboard</a>
+    
+    <h1 style="color: #8e44ad;">Edit Register: {{ meeting.topic.title|default:"No Topic" }}</h1>
+    <p style="color: #7f8c8d;">Date: {{ meeting.date|date:"F d, Y" }}</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div style="display: flex; font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+            <div style="flex: 2;">Member Name</div>
+            <div style="flex: 1;">Status</div>
+            <div style="flex: 2; margin-left: 15px;">Comments / Notes</div>
+        </div>
+
+        {% for member in members %}
+        <div class="member-row">
+            <div class="member-name">{{ member.first_name }} {{ member.last_name }}</div>
+            
+            <select name="mode_{{ member.id }}" class="status-select">
+                <option value="physical" {% if member.current_mode == 'physical' %}selected{% endif %}>Physical</option>
+                <option value="online" {% if member.current_mode == 'online' %}selected{% endif %}>Online</option>
+                <option value="absent" {% if member.current_mode == 'absent' %}selected{% endif %}>Absent</option>
+            </select>
+            
+            <input type="text" name="comment_{{ member.id }}" class="comment-input" value="{{ member.current_comment }}" placeholder="e.g. Traveled, Apology...">
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="save-btn">✅ Update All Records</button>
+    </form>
+</div>
+
+</body>
+</html>

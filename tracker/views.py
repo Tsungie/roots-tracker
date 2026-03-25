@@ -738,6 +738,7 @@ def dashboard(request):
                     "topic": meeting.topic.title if meeting.topic else "No Topic",
                     "status": status_text,
                     "color": color,
+                    "meeting_id": meeting.id,
                 }
             )
 
@@ -1003,4 +1004,43 @@ def write_reflection(request, member_id):
         request,
         "tracker/write_reflection.html",
         {"member": member, "meetings": meetings},
+    )
+
+
+def edit_attendance(request, meeting_id):
+    meeting = get_object_or_404(Meeting, id=meeting_id)
+    members = Member.objects.filter(group=meeting.group)
+
+    if request.method == "POST":
+        for member in members:
+            mode = request.POST.get(f"mode_{member.id}")
+            comment = request.POST.get(f"comment_{member.id}")
+
+            # This updates the existing record, or creates a new one if it was missing!
+            Attendance.objects.update_or_create(
+                meeting=meeting,
+                member=member,
+                defaults={"mode": mode, "comment": comment},
+            )
+        return redirect("dashboard")
+
+    # Pre-load existing attendance so we don't overwrite good data with blanks
+    existing_records = {
+        a.member_id: a for a in Attendance.objects.filter(meeting=meeting)
+    }
+
+    for member in members:
+        record = existing_records.get(member.id)
+        member.current_mode = (
+            record.mode if record else "absent"
+        )  # Default dropdown to absent if not marked
+        member.current_comment = record.comment if record else ""
+
+    return render(
+        request,
+        "tracker/edit_attendance.html",
+        {
+            "meeting": meeting,
+            "members": members,
+        },
     )

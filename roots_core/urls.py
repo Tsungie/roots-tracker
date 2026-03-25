@@ -20,6 +20,7 @@ urlpatterns = [
     path("export/word/", views.export_status_word, name="export_word"),
     path("meeting/<int:meeting_id>/", views.meeting_detail, name="meeting_detail"),
     path("member/add/", views.manage_member, name="add_member"),
+    path("meeting/<int:meeting_id>/edit/", views.edit_attendance, name="edit_attendance"),
     path("member/edit/<int:member_id>/", views.manage_member, name="edit_member"),
     path("member/<int:member_id>/", views.member_detail, name="member_detail"),
     path("whatsapp/webhook/", views.whatsapp_webhook, name="whatsapp_webhook"),

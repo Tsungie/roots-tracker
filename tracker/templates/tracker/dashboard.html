@@ -429,7 +429,9 @@
 
               <td style="padding: 15px; vertical-align: top">
                 <p style="margin-top: 0">
-                  <strong>Total Paid: ${{ member.total_approved_payments }}</strong>
+                  <strong
+                    >Total Paid: ${{ member.total_approved_payments }}</strong
+                  >
                 </p>
                 <div style="font-size: 0.85rem">
                   <span style="color: green">✔ Paid:</span>
@@ -444,10 +446,19 @@
                 {% for item in member.recent_breakdown %}
                 <strong>{{ item.date|date:"M d" }}:</strong>
                 <span style="color: var(--roots-purple)">{{ item.topic }}</span>
-                -
+                - {% if item.status == "Not Marked" %}
+                <a
+                  href="{% url 'edit_attendance' item.meeting_id %}"
+                  style="color: {{ item.color }}; font-weight: bold; text-decoration: underline;"
+                >
+                  {{ item.status }} ✎
+                </a>
+                {% else %}
                 <span style="color: {{ item.color }}; font-weight: 500;">
-                  {{ item.status }} </span
-                ><br />
+                  {{ item.status }}
+                </span>
+                {% endif %}
+                <br />
                 {% endfor %}
               </td>
             </tr>
