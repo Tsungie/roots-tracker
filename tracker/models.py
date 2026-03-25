@@ -31,6 +31,7 @@ class Member(models.Model):
     date_of_birth = models.DateField(blank=True, null=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
+    is_student = models.BooleanField(default=True, help_text="Uncheck this for Supervisors/Facilitators")
     phone_number = models.CharField(
         max_length=20, unique=True, help_text="WhatsApp number format: +263..."
     )
@@ -40,22 +41,21 @@ class Member(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
-    
     @property
     def total_approved_payments(self):
         # Grabs all 'approved' payments for this member and sums the amount
         approved = self.payments.filter(status="approved")
         return sum(p.amount for p in approved)
-    
+
     @property
     def attendance_status(self):
         total = self.attendance_set.count()
         if total == 0: return "New"
-        
+
         # Check last 3 meetings
         last_three = self.attendance_set.order_by('-meeting__date')[:3]
         absent_count = sum(1 for r in last_three if r.mode == 'absent')
-        
+
         if absent_count >= 2:
             return "At Risk"
         return "Active"
