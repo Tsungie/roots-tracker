@@ -693,7 +693,7 @@ def dashboard(request):
     # Define which months we expect payment for (e.g., Jan to current month)
     START_MONTH = 2
     months_to_check = range(START_MONTH, date.today().month + 1)
-    latest_meetings = meetings[:5]
+    latest_meetings = meetings[:10]
 
     for member in members:
         # Get paid months for this year (these come out as numbers like 1, 2, 3)
