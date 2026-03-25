@@ -1008,33 +1008,33 @@ def write_reflection(request, member_id):
 
 
 def edit_attendance(request, meeting_id):
-    meeting = get_object_or_404(Meeting, id=meeting_id)
-    members = Member.objects.filter(group=meeting.group)
+    # ... (keep the top part the same) ...
 
     if request.method == "POST":
         for member in members:
             mode = request.POST.get(f"mode_{member.id}")
-            comment = request.POST.get(f"comment_{member.id}")
+            comment_text = request.POST.get(
+                f"comment_{member.id}"
+            )  # HTML form uses singular
 
-            # This updates the existing record, or creates a new one if it was missing!
             Attendance.objects.update_or_create(
                 meeting=meeting,
                 member=member,
-                defaults={"mode": mode, "comment": comment},
+                # FIX 1: Change "comment" to "comments" here!
+                defaults={"mode": mode, "comments": comment_text},
             )
         return redirect("dashboard")
 
-    # Pre-load existing attendance so we don't overwrite good data with blanks
     existing_records = {
         a.member_id: a for a in Attendance.objects.filter(meeting=meeting)
     }
 
     for member in members:
         record = existing_records.get(member.id)
-        member.current_mode = (
-            record.mode if record else "absent"
-        )  # Default dropdown to absent if not marked
-        member.current_comment = record.comment if record else ""
+        member.current_mode = record.mode if record else "absent"
+
+        # FIX 2: Change record.comment to record.comments here!
+        member.current_comment = record.comments if record else ""
 
     return render(
         request,
