@@ -446,19 +446,18 @@
                 {% for item in member.recent_breakdown %}
                 <strong>{{ item.date|date:"M d" }}:</strong>
                 <span style="color: var(--roots-purple)">{{ item.topic }}</span>
-                - {% if item.status == "Not Marked" %}
+                -
                 <a
                   href="{% url 'edit_attendance' item.meeting_id %}"
-                  style="color: {{ item.color }}; font-weight: bold; text-decoration: underline;"
+                  style="color: {{ item.color }}; 
+                          font-weight: {% if item.status == 'Not Marked' %}bold{% else %}500{% endif %}; 
+                          text-decoration: none; 
+                          border-bottom: 1px dashed {{ item.color }};"
+                  title="Click to edit"
                 >
-                  {{ item.status }} ✎
-                </a>
-                {% else %}
-                <span style="color: {{ item.color }}; font-weight: 500;">
                   {{ item.status }}
-                </span>
-                {% endif %}
-                <br />
+                  <span style="font-size: 0.7rem; opacity: 0.6">✎</span> </a
+                ><br />
                 {% endfor %}
               </td>
             </tr>
