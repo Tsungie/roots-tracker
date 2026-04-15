@@ -1,9 +1,19 @@
 from django.contrib import admin
+import zipfile
+import urllib.request
 from .models import Group, Member, Meeting, Attendance, Payment, WhatsAppDraft, Topic
 from django.http import HttpResponse
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.units import inch
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Table,
+    TableStyle,
+    Paragraph,
+    Spacer,
+    Image,
+)
 from reportlab.lib.styles import getSampleStyleSheet
 from django.db.models import Sum
 import io
@@ -33,14 +43,151 @@ class MeetingAdmin(admin.ModelAdmin):
 
 @admin.action(description="Download PDF Report for selected payments")
 def export_to_pdf(modeladmin, request, queryset):
-    # ... (Keep your existing export_to_pdf code here) ...
-    pass
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    data = [["Member", "Month", "Year", "Amount", "Status"]]
+    for payment in queryset:
+        data.append(
+            [
+                f"{payment.member.first_name} {payment.member.last_name}",
+                payment.get_month_display(),
+                str(payment.year),
+                f"${payment.amount}",
+                payment.status.upper(),
+            ]
+        )
+
+    t = Table(data)
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#8e44ad")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ]
+        )
+    )
+    elements.append(t)
+    doc.build(elements)
+
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="payments_report.pdf"'
+    return response
 
 
 @admin.action(description="Download Member Summary Report")
 def export_member_summary_pdf(modeladmin, request, queryset):
-    # ... (Keep your existing export_member_summary_pdf code here) ...
-    pass
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    data = [["Member", "Phone", "Total Paid", "Attendance"]]
+    for member in queryset:
+        data.append(
+            [
+                f"{member.first_name} {member.last_name}",
+                member.phone_number,
+                f"${member.total_approved_payments}",
+                str(member.total_attendance),
+            ]
+        )
+
+    t = Table(data)
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#8e44ad")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ]
+        )
+    )
+    elements.append(t)
+    doc.build(elements)
+
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="member_summary.pdf"'
+    return response
+
+
+@admin.action(description="📦 Download receipts as ZIP for selected payments")
+def download_receipts_zip(modeladmin, request, queryset):
+    buffer = io.BytesIO()
+
+    with zipfile.ZipFile(buffer, "w") as zip_file:
+        for payment in queryset:
+            if payment.receipt_image:
+                try:
+                    url = payment.receipt_image.url
+                    with urllib.request.urlopen(url) as response:
+                        image_data = response.read()
+                    filename = f"{payment.member.first_name}_{payment.member.last_name}_{payment.get_month_display()}_{payment.year}.jpg"
+                    zip_file.writestr(filename, image_data)
+                except Exception as e:
+                    print(f"Could not add {payment}: {e}")
+
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type="application/zip")
+    response["Content-Disposition"] = 'attachment; filename="receipts.zip"'
+    return response
+
+
+@admin.action(description="📄 Download receipts as PDF for selected payments")
+def download_receipts_pdf(modeladmin, request, queryset):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    current_member = None
+
+    for payment in queryset.order_by("member__first_name", "-year", "-month"):
+        if current_member != payment.member:
+            current_member = payment.member
+            elements.append(Spacer(1, 12))
+            elements.append(
+                Paragraph(
+                    f"{payment.member.first_name} {payment.member.last_name}",
+                    styles["Heading1"],
+                )
+            )
+
+        elements.append(
+            Paragraph(
+                f"{payment.get_month_display()} {payment.year} — ${payment.amount} via {payment.payment_method} — {payment.status.upper()}",
+                styles["Normal"],
+            )
+        )
+
+        if payment.receipt_image:
+            try:
+                url = payment.receipt_image.url
+                with urllib.request.urlopen(url) as response:
+                    img_data = io.BytesIO(response.read())
+                img = Image(img_data, width=4 * inch, height=3 * inch)
+                elements.append(img)
+            except Exception as e:
+                elements.append(
+                    Paragraph(f"(Could not load image: {e})", styles["Normal"])
+                )
+
+        elements.append(Spacer(1, 12))
+
+    doc.build(elements)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="receipts.pdf"'
+    return response
 
 
 # ==========================================
@@ -65,24 +212,18 @@ class MemberAdmin(admin.ModelAdmin):
 class PaymentAdmin(admin.ModelAdmin):
     list_display = (
         "member",
-        "month",
-        "year",
+        "get_month_year",
         "amount",
         "payment_method",
         "transaction_id",
         "status",
         "uploaded_at",
     )
-    list_filter = ("status", "month", "year", "payment_method")
+    list_filter = ("status", "payment_method", "year", "month")
     search_fields = ("member__first_name", "member__last_name", "transaction_id")
     list_editable = ("status",)
-    ordering = (
-        "member__first_name",
-        "member__last_name",
-        "-year",
-        "-month",
-    )
-    actions = [export_to_pdf]
+    ordering = ("member__first_name", "member__last_name", "-year", "-month")
+    actions = [export_to_pdf, download_receipts_zip, download_receipts_pdf]
 
     def get_month_year(self, obj):
         return f"{obj.get_month_display()} {obj.year}"
