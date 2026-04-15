@@ -677,10 +677,14 @@ def select_group(request):
 
 def dashboard(request):
     group_id = request.session.get("active_group_id")
+    if not group_id:
+        return redirect("select_group")
+
+    active_group = Group.objects.get(id=group_id)
     members = Member.objects.filter(group_id=group_id)
     meetings = Meeting.objects.filter(group_id=group_id).order_by("-date")
 
-    # 1. Total Stats for the top of the page
+    # 1. Total Stats
     total_present = Attendance.objects.filter(
         meeting__group_id=group_id, mode__in=["physical", "online"]
     ).count()
@@ -688,40 +692,48 @@ def dashboard(request):
         meeting__group_id=group_id, mode="absent"
     ).count()
 
-    # 2. Prep Member Data for the Summary Table
+    # 2. Chart Data
+    paid_count = Payment.objects.filter(
+        member__group_id=group_id,
+        year=date.today().year,
+        month=date.today().month,
+        status="approved",
+    ).count()
+    unpaid_count = members.count() - paid_count
+    last_5 = meetings[:5]
+    meeting_labels = [m.date.strftime("%b %d") for m in last_5]
+    attendance_counts = [
+        Attendance.objects.filter(meeting=m, mode__in=["physical", "online"]).count()
+        for m in last_5
+    ]
+
+    # 3. Member payment/attendance breakdown
     current_year = date.today().year
-    # Define which months we expect payment for (e.g., Jan to current month)
     START_MONTH = 2
     months_to_check = range(START_MONTH, date.today().month + 1)
     latest_meetings = meetings[:10]
 
     for member in members:
-        # Get paid months for this year (these come out as numbers like 1, 2, 3)
         paid_months_numbers = list(
             Payment.objects.filter(
                 member=member, year=current_year, status="approved"
             ).values_list("month", flat=True)
         )
-
         member.paid_list = [
             calendar.month_abbr[int(m)] for m in paid_months_numbers if m
         ]
-
-        # Figure out the unpaid numbers, and convert those to names too
         member.unpaid_list = [
             calendar.month_abbr[int(m)]
             for m in months_to_check
             if m not in paid_months_numbers
         ]
 
-        # Get Attendance with Topics
         attendance_dict = {
             a.meeting_id: a
             for a in Attendance.objects.filter(
                 member=member, meeting__in=latest_meetings
             )
         }
-        # Build a perfectly uniform list for every single sister
         breakdown = []
         for meeting in latest_meetings:
             record = attendance_dict.get(meeting.id)
@@ -729,9 +741,8 @@ def dashboard(request):
                 status_text = record.get_mode_display()
                 color = "red" if record.mode == "absent" else "green"
             else:
-                status_text = "Not Marked"  # Flags if they were missed on the register!
+                status_text = "Not Marked"
                 color = "orange"
-
             breakdown.append(
                 {
                     "date": meeting.date,
@@ -741,16 +752,21 @@ def dashboard(request):
                     "meeting_id": meeting.id,
                 }
             )
-
         member.recent_breakdown = breakdown
+
     return render(
         request,
         "tracker/dashboard.html",
         {
+            "active_group": active_group,
             "members": members,
             "meetings": meetings,
             "total_present": total_present,
             "total_absent": total_absent,
+            "paid_count": paid_count,
+            "unpaid_count": unpaid_count,
+            "meeting_labels": json.dumps(meeting_labels),
+            "attendance_counts": json.dumps(attendance_counts),
         },
     )
 
