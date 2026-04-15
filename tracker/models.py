@@ -160,6 +160,9 @@ class Payment(models.Model):
     payment_method = models.CharField(
         max_length=15, choices=METHOD_CHOICES, default="bank"
     )
+    payment_date = models.DateField(
+        blank=True, null=True, help_text="The actual date the payment was made"
+    )
     receipt_image = models.ImageField(upload_to="receipts/%Y/%m/")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     uploaded_at = models.DateTimeField(auto_now_add=True)

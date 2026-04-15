@@ -5,7 +5,18 @@ from .models import Payment, Attendance
 class ReceiptUploadForm(forms.ModelForm):
     class Meta:
         model = Payment
-        fields = ["member", "amount", "month", "year", "payment_method", "transaction_id", "receipt_image", "status", "admin_notes", "receipt_file"]
+        fields = [
+            "member",
+            "amount",
+            "month",
+            "year",
+            "payment_method",
+            "payment_date",
+            "receipt_image",
+            "status",
+            "admin_notes",
+            "receipt_file",
+        ]
 
         widgets = {
             "member": forms.Select(attrs={"class": "form-control"}),
@@ -13,16 +24,26 @@ class ReceiptUploadForm(forms.ModelForm):
             "month": forms.Select(attrs={"class": "form-control"}),
             "year": forms.NumberInput(attrs={"class": "form-control"}),
             "payment_method": forms.Select(attrs={"class": "form-control"}),
-            "transaction_id": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "e.g. TXN123456 or bank reference number",
-            }),
+            "payment_date": forms.DateInput(
+                attrs={
+                    "class": "form-control",
+                    "type": "date",
+                }
+            ),
+            "transaction_id": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "e.g. TXN123456 or bank reference number",
+                }
+            ),
             "receipt_image": forms.ClearableFileInput(attrs={"class": "form-control"}),
             "status": forms.Select(attrs={"class": "form-control"}),
-            "admin_notes": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "e.g. paid through Stanbic",
-            }),
+            "admin_notes": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "e.g. paid through Stanbic",
+                }
+            ),
             "receipt_file": forms.ClearableFileInput(attrs={"class": "form-control"}),
         }
 

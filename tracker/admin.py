@@ -48,7 +48,7 @@ def export_to_pdf(modeladmin, request, queryset):
     elements = []
     styles = getSampleStyleSheet()
 
-    data = [["Member", "Month", "Year", "Amount", "Status"]]
+    data = [["Member", "Month", "Year", "Amount", "Payment Date", "Status"]]
     for payment in queryset:
         data.append(
             [
@@ -56,6 +56,11 @@ def export_to_pdf(modeladmin, request, queryset):
                 payment.get_month_display(),
                 str(payment.year),
                 f"${payment.amount}",
+                (
+                    payment.payment_date.strftime("%d %b %Y")
+                    if payment.payment_date
+                    else "-"
+                ),
                 payment.status.upper(),
             ]
         )
@@ -162,9 +167,14 @@ def download_receipts_pdf(modeladmin, request, queryset):
                 )
             )
 
+        payment_date_str = (
+            payment.payment_date.strftime("%d %b %Y")
+            if payment.payment_date
+            else "Date not recorded"
+        )
         elements.append(
             Paragraph(
-                f"{payment.get_month_display()} {payment.year} — ${payment.amount} via {payment.payment_method} — {payment.status.upper()}",
+                f"{payment.get_month_display()} {payment.year} — ${payment.amount} via {payment.get_payment_method_display()} — Paid on {payment_date_str} — {payment.status.upper()}",
                 styles["Normal"],
             )
         )
