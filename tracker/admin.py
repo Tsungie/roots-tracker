@@ -131,15 +131,21 @@ def download_receipts_zip(modeladmin, request, queryset):
 
     with zipfile.ZipFile(buffer, "w") as zip_file:
         for payment in queryset:
-            if payment.receipt_image:
-                try:
-                    url = payment.receipt_image.url
-                    with urllib.request.urlopen(url) as response:
-                        image_data = response.read()
-                    filename = f"{payment.member.first_name}_{payment.member.last_name}_{payment.get_month_display()}_{payment.year}.jpg"
-                    zip_file.writestr(filename, image_data)
-                except Exception as e:
-                    print(f"Could not add {payment}: {e}")
+                   if payment.receipt_image:
+                    try:
+                        url = payment.receipt_image.url
+                        # Handle local media files
+                        if url.startswith('/media/'):
+                            local_path = f"/home/misstsungie/roots-tracker{url}"
+                            img = Image(local_path, width=4*inch, height=3*inch)
+                        else:
+                            # Cloudinary URL
+                            with urllib.request.urlopen(url) as response:
+                                img_data = io.BytesIO(response.read())
+                            img = Image(img_data, width=4*inch, height=3*inch)
+                        elements.append(img)
+                    except Exception as e:
+                        elements.append(Paragraph(f"(Could not load image: {e})", styles["Normal"]))
 
     buffer.seek(0)
     response = HttpResponse(buffer, content_type="application/zip")
