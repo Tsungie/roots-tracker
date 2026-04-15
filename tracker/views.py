@@ -104,7 +104,7 @@ def export_status_pdf(request):
 
 
 def upload_reflections(request):
-    group_id = request.session.get("active_group_id")
+    group_id = request.session.get("active_group_id") #...
     active_group = Group.objects.get(id=group_id)
     members = Member.objects.filter(group=active_group, is_student=True)
     meetings = Meeting.objects.filter(group=active_group).order_by("-date")
