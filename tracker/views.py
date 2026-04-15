@@ -60,7 +60,7 @@ def upload_success(request):
 
 def export_status_pdf(request):
     group_id = request.session.get("active_group_id")
-    members = Member.objects.filter(group_id=group_id)
+    members = Member.objects.filter(group_id=group_id, is_student=True)
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="Roots_Status_Summary.pdf"'
@@ -104,7 +104,7 @@ def export_status_pdf(request):
 
 
 def upload_reflections(request):
-    group_id = request.session.get("active_group_id") #...
+    group_id = request.session.get("active_group_id")  # ...
     active_group = Group.objects.get(id=group_id)
     members = Member.objects.filter(group=active_group, is_student=True)
     meetings = Meeting.objects.filter(group=active_group).order_by("-date")
@@ -433,7 +433,7 @@ def export_status_pdf(request):
 
 def export_status_word(request):
     group_id = request.session.get("active_group_id")
-    members = Member.objects.filter(group_id=group_id)
+    members = Member.objects.filter(group_id=group_id, is_student=True)
 
     document = Document()
     document.add_heading("R.O.O.T.S Member Status Summary", 0)
@@ -681,7 +681,7 @@ def dashboard(request):
         return redirect("select_group")
 
     active_group = Group.objects.get(id=group_id)
-    members = Member.objects.filter(group_id=group_id)
+    members = Member.objects.filter(group_id=group_id, is_student=True)
     meetings = Meeting.objects.filter(group_id=group_id).order_by("-date")
 
     # 1. Total Stats
