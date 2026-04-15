@@ -392,7 +392,7 @@ def download_summary_summary(request):
 
 def export_status_pdf(request):
     group_id = request.session.get("active_group_id")
-    members = Member.objects.filter(group_id=group_id)
+    members = Member.objects.filter(group_id=group_id, is_student=True)
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="Roots_Status_Summary.pdf"'
