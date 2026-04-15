@@ -174,6 +174,12 @@ class Payment(models.Model):
         return f"{self.member} - {self.get_month_display()} {self.year} ({self.status})"
 
     receipt_hash = models.CharField(max_length=64, blank=True, null=True, unique=True)
+    transaction_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Bank reference, EcoCash transaction ID, or receipt number",
+    )
 
     def save(self, *args, **kwargs):
         # Only calculate the hash if there is an image and it hasn't been hashed yet

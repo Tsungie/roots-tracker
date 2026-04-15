@@ -106,7 +106,7 @@ def export_status_pdf(request):
 def upload_reflections(request):
     group_id = request.session.get("active_group_id")
     active_group = Group.objects.get(id=group_id)
-    members = Member.objects.filter(group=active_group)
+    members = Member.objects.filter(group=active_group, is_student=True)
     meetings = Meeting.objects.filter(group=active_group).order_by("-date")
 
     if request.method == "POST":
@@ -178,7 +178,7 @@ def mark_attendance(request):
         return redirect("select_group")
 
     active_group = Group.objects.get(id=group_id)
-    members = Member.objects.filter(group=active_group)
+    members = Member.objects.filter(group=active_group, is_student=True)
     topics = Topic.objects.filter(group=active_group)  # Get all your custom topics
 
     if request.method == "POST":
@@ -1012,7 +1012,8 @@ def edit_attendance(request, meeting_id):
     meeting = get_object_or_404(Meeting, id=meeting_id)
 
     # 2. Grab all members for this group
-    members = Member.objects.filter(group=meeting.group)
+    # Change to:
+    members = Member.objects.filter(group=meeting.group, is_student=True)
 
     if request.method == "POST":
         for member in members:

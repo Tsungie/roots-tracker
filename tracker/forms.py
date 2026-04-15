@@ -5,21 +5,25 @@ from .models import Payment, Attendance
 class ReceiptUploadForm(forms.ModelForm):
     class Meta:
         model = Payment
-        # Add 'payment_method' to the list of fields
-        fields = ["member", "month", "payment_method", "receipt_image"]
+        fields = ["member", "amount", "month", "year", "payment_method", "transaction_id", "receipt_image", "status", "admin_notes", "receipt_file"]
 
         widgets = {
-            "member": forms.Select(
-                attrs={"style": "width: 100%; padding: 10px; margin-bottom: 15px;"}
-            ),
-            "month": forms.Select(
-                attrs={"style": "width: 100%; padding: 10px; margin-bottom: 15px;"}
-            ),
-            # Add styling for the new dropdown
-            "payment_method": forms.Select(
-                attrs={"style": "width: 100%; padding: 10px; margin-bottom: 15px;"}
-            ),
-            "receipt_image": forms.FileInput(attrs={"style": "margin-bottom: 15px;"}),
+            "member": forms.Select(attrs={"class": "form-control"}),
+            "amount": forms.NumberInput(attrs={"class": "form-control"}),
+            "month": forms.Select(attrs={"class": "form-control"}),
+            "year": forms.NumberInput(attrs={"class": "form-control"}),
+            "payment_method": forms.Select(attrs={"class": "form-control"}),
+            "transaction_id": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "e.g. TXN123456 or bank reference number",
+            }),
+            "receipt_image": forms.ClearableFileInput(attrs={"class": "form-control"}),
+            "status": forms.Select(attrs={"class": "form-control"}),
+            "admin_notes": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "e.g. paid through Stanbic",
+            }),
+            "receipt_file": forms.ClearableFileInput(attrs={"class": "form-control"}),
         }
 
 

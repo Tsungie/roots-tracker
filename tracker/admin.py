@@ -67,12 +67,14 @@ class PaymentAdmin(admin.ModelAdmin):
         "member",
         "month",
         "year",
+        "amount",
         "payment_method",
+        "transaction_id",
         "status",
         "uploaded_at",
     )
     list_filter = ("status", "month", "year", "payment_method")
-    search_fields = ("member__first_name", "member__last_name")
+    search_fields = ("member__first_name", "member__last_name", "transaction_id")
     actions = [export_to_pdf]
 
 

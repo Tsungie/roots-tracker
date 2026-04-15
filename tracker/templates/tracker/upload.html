@@ -3,43 +3,263 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Roots - Receipt Upload</title>
+    <title>Roots - Add Payment</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 30px 16px;
+      }
+
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        width: 100%;
+        max-width: 560px;
+        overflow: hidden;
+      }
+
+      .card-header {
+        background: linear-gradient(135deg, #6c3483, #2980b9);
+        padding: 28px 32px 24px;
+        color: #fff;
+      }
+
+      .card-header .brand {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        opacity: 0.8;
+        margin-bottom: 6px;
+      }
+
+      .card-header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .card-header p {
+        font-size: 14px;
+        opacity: 0.85;
+      }
+
+      .card-body {
+        padding: 28px 32px 32px;
+      }
+
+      .alert-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin: 24px 0 14px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f3f4f6;
+      }
+
+      .section-label:first-of-type { margin-top: 0; }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #111827;
+        background: #fafafa;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+      }
+
+      .form-control:focus {
+        border-color: #6c3483;
+        box-shadow: 0 0 0 3px rgba(108, 52, 131, 0.12);
+        background: #fff;
+      }
+
+      select.form-control {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+      }
+
+      .row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .hint {
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 4px;
+      }
+
+      input[type="file"].form-control {
+        padding: 7px 14px;
+        cursor: pointer;
+      }
+
+      .btn-submit {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #6c3483, #2980b9);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 28px;
+        letter-spacing: 0.3px;
+        transition: opacity 0.15s, transform 0.1s;
+      }
+
+      .btn-submit:hover { opacity: 0.92; }
+      .btn-submit:active { transform: scale(0.99); }
+
+      .admin-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 13px;
+        color: #6b7280;
+        text-decoration: none;
+      }
+
+      .admin-link span {
+        color: #6c3483;
+        font-weight: 600;
+      }
+
+      .admin-link:hover span { text-decoration: underline; }
+
+      /* Make Django's ClearableFileInput look native */
+      p { margin: 0; }
+    </style>
   </head>
- <body style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
+  <body>
+    <div class="card">
+      <div class="card-header">
+        <div class="brand">Roots App</div>
+        <h1>Add Payment</h1>
+        <p>Record a member's monthly dues submission</p>
+      </div>
 
-    <div style="text-align: right; margin-bottom: 15px;">
-        <a href="/admin" style="color: #3498db; text-decoration: none; font-size: 14px; background-color: #f1f1f1; padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd;">
-            Go to Admin Portal
-        </a>
-    </div>
-
-    <h2 style="color: #2c3e50">Roots Monthly Dues</h2>
-    <p>Please select your name and upload your $10 monthly receipt below.</p>
-{% if error_message %}
-        <div style="background-color: #fee2e2; color: #991b1b; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
-            <strong>{{ error_message }}</strong>
+      <div class="card-body">
+        {% if error_message %}
+        <div class="alert-error">
+          <span>&#9888;</span>
+          <span>{{ error_message }}</span>
         </div>
-    {% endif %}
-    
-    <form method="POST" enctype="multipart/form-data">
+        {% endif %}
 
-    <form method="POST" enctype="multipart/form-data">
-      {% csrf_token %} {{ form.as_p }}
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
 
-      <button
-        type="submit"
-        style="
-          background-color: #27ae60;
-          color: white;
-          padding: 12px 20px;
-          border: none;
-          border-radius: 5px;
-          width: 100%;
-          font-size: 16px;
-        "
-      >
-        Upload Receipt
-      </button>
-    </form>
+          <div class="section-label">Member &amp; Amount</div>
+
+          <div class="form-group">
+            <label for="{{ form.member.id_for_label }}">Member</label>
+            {{ form.member }}
+          </div>
+
+          <div class="row-2">
+            <div class="form-group">
+              <label for="{{ form.amount.id_for_label }}">Amount ($)</label>
+              {{ form.amount }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.payment_method.id_for_label }}">Payment Method</label>
+              {{ form.payment_method }}
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div class="form-group">
+              <label for="{{ form.month.id_for_label }}">Month</label>
+              {{ form.month }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.year.id_for_label }}">Year</label>
+              {{ form.year }}
+            </div>
+          </div>
+
+          <div class="section-label">Transaction Details</div>
+
+          <div class="form-group">
+            <label for="{{ form.transaction_id.id_for_label }}">Receipt / Transaction ID</label>
+            {{ form.transaction_id }}
+            <div class="hint">Bank reference, EcoCash transaction ID, or physical receipt number</div>
+          </div>
+
+          <div class="section-label">Receipt &amp; Status</div>
+
+          <div class="form-group">
+            <label for="{{ form.receipt_image.id_for_label }}">Receipt Image</label>
+            {{ form.receipt_image }}
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.receipt_file.id_for_label }}">Receipt File (optional)</label>
+            {{ form.receipt_file }}
+          </div>
+
+          <div class="row-2">
+            <div class="form-group">
+              <label for="{{ form.status.id_for_label }}">Status</label>
+              {{ form.status }}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.admin_notes.id_for_label }}">Admin Notes</label>
+              {{ form.admin_notes }}
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit">Save Payment</button>
+        </form>
+
+        <a href="/admin" class="admin-link">Back to <span>Admin Portal</span></a>
+      </div>
+    </div>
   </body>
 </html>
