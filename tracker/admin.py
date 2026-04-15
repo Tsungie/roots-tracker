@@ -75,7 +75,19 @@ class PaymentAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "month", "year", "payment_method")
     search_fields = ("member__first_name", "member__last_name", "transaction_id")
+    list_editable = ("status",)
+    ordering = (
+        "member__first_name",
+        "member__last_name",
+        "-year",
+        "-month",
+    )
     actions = [export_to_pdf]
+
+    def get_month_year(self, obj):
+        return f"{obj.get_month_display()} {obj.year}"
+
+    get_month_year.short_description = "Period"
 
 
 # ==========================================
