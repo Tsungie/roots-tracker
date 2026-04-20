@@ -226,7 +226,7 @@ def meeting_detail(request, meeting_id):
             # IMPORTANT: Check your model! Is it record.mode or record.status?
             # If your model uses 'status', change 'mode' below to 'status'
             record.mode = request.POST.get(f"mode_{record.member.id}")
-            record.comment = request.POST.get(f"comment_{record.member.id}")
+            record.comments = request.POST.get(f"comment_{record.member.id}")
             record.save()
         return redirect("dashboard")
 
@@ -392,71 +392,241 @@ def download_summary_summary(request):
 
 def export_status_pdf(request):
     group_id = request.session.get("active_group_id")
-    members = Member.objects.filter(group_id=group_id, is_student=True)
+    active_group = Group.objects.get(id=group_id)
+    members = Member.objects.filter(group=active_group, is_student=True).order_by("first_name")
+    all_meetings = Meeting.objects.filter(group=active_group).order_by("date")
 
-    response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="Roots_Status_Summary.pdf"'
+    current_year = date.today().year
+    START_MONTH = 2
+    months_to_check = list(range(START_MONTH, date.today().month + 1))
 
-    doc = SimpleDocTemplate(response, pagesize=landscape(letter))
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(letter),
+        leftMargin=20,
+        rightMargin=20,
+        topMargin=30,
+        bottomMargin=30,
+    )
     elements = []
+    styles = getSampleStyleSheet()
+    small = styles["Normal"].clone("small")
+    small.fontSize = 8
+    small.leading = 11
 
-    # Table Headers
-    data = [["Member Name", "Total Paid", "Phone Number"]]
+    elements.append(Paragraph(f"R.O.O.T.S Member Status Summary — {active_group.name}", styles["Title"]))
+    elements.append(Spacer(1, 10))
+
+    # Header row
+    data = [["Member Name", "Payment Status (Approved)", "Meeting Breakdown (Topic & Date)"]]
 
     for member in members:
-        data.append(
-            [
-                f"{member.first_name} {member.last_name}",
-                f"${member.total_approved_payments}",
-                member.phone_number,
-            ]
+        # --- Payment column ---
+        paid_months_numbers = list(
+            Payment.objects.filter(member=member, year=current_year, status="approved")
+            .values_list("month", flat=True)
         )
+        total_paid = member.total_approved_payments
+        paid_list = [calendar.month_abbr[int(m)] for m in paid_months_numbers if m]
+        unpaid_list = [
+            calendar.month_abbr[int(m)]
+            for m in months_to_check
+            if m not in paid_months_numbers
+        ]
 
-    table = Table(data, colWidths=[200, 150, 200])
-    table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#8e44ad")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-                ("GRID", (0, 0), (-1, -1), 1, colors.black),
-            ]
-        )
-    )
+        payment_lines = f"<b>Total Paid: ${total_paid}</b><br/>"
+        if member.is_exempt_from_paying:
+            payment_lines += "<i>(Exempt from payments)</i>"
+        else:
+            if paid_list:
+                payment_lines += f'<font color="green">&#10004; Paid: {", ".join(paid_list)}</font><br/>'
+            if unpaid_list:
+                payment_lines += f'<font color="red">&#10008; Owing: {", ".join(unpaid_list)}</font>'
 
-    elements.append(table)
+        # --- Meeting breakdown column ---
+        attendance_dict = {
+            a.meeting_id: a
+            for a in Attendance.objects.filter(member=member, meeting__in=all_meetings)
+        }
+        breakdown_lines = ""
+        for meeting in all_meetings:
+            topic = meeting.topic.title if meeting.topic else "No Topic"
+            date_str = meeting.date.strftime("%b %d, %Y")
+            record = attendance_dict.get(meeting.id)
+            if record:
+                if record.mode == "absent":
+                    status = '<font color="red">Absent</font>'
+                else:
+                    status = f'<font color="green">{record.get_mode_display()}</font>'
+            else:
+                status = '<font color="orange">Not Marked</font>'
+            breakdown_lines += f"<b>{topic}</b> ({date_str}): {status}<br/>"
+
+        if not all_meetings:
+            breakdown_lines = "No sessions recorded."
+
+        data.append([
+            Paragraph(f"<b>{member.first_name} {member.last_name}</b>", small),
+            Paragraph(payment_lines, small),
+            Paragraph(breakdown_lines, small),
+        ])
+
+    # landscape(letter) = 792pt wide; minus 40pt margins = 752pt usable
+    t = Table(data, colWidths=[130, 190, 432])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#8e44ad")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 10),
+        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.HexColor("#f4f7f6")]),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+    ]))
+
+    elements.append(t)
     doc.build(elements)
+
+    pdf = buffer.getvalue()
+    buffer.close()
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{active_group.name}_Status_Summary.pdf"'
+    )
+    response.write(pdf)
     return response
 
 
 def export_status_word(request):
     group_id = request.session.get("active_group_id")
-    members = Member.objects.filter(group_id=group_id, is_student=True)
+    active_group = Group.objects.get(id=group_id)
+    members = Member.objects.filter(group=active_group, is_student=True).order_by("first_name")
+    all_meetings = Meeting.objects.filter(group=active_group).order_by("date")
+
+    current_year = date.today().year
+    START_MONTH = 2
+    months_to_check = list(range(START_MONTH, date.today().month + 1))
+
+    from docx.shared import Pt, RGBColor
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+
+    def set_cell_bg(cell, hex_color):
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), hex_color)
+        tcPr.append(shd)
 
     document = Document()
     document.add_heading("R.O.O.T.S Member Status Summary", 0)
+    document.add_heading(active_group.name, 2)
 
     table = document.add_table(rows=1, cols=3)
     table.style = "Table Grid"
-    hdr_cells = table.rows[0].cells
-    hdr_cells[0].text = "Member Name"
-    hdr_cells[1].text = "Total Paid"
-    hdr_cells[2].text = "Phone Number"
+
+    # Header row
+    hdr = table.rows[0].cells
+    headers = ["Member Name", "Payment Status (Approved)", "Meeting Breakdown (Topic & Date)"]
+    for i, cell in enumerate(hdr):
+        cell.text = headers[i]
+        set_cell_bg(cell, "8e44ad")
+        for para in cell.paragraphs:
+            for run in para.runs:
+                run.bold = True
+                run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+                run.font.size = Pt(10)
 
     for member in members:
+        # --- Payment data ---
+        paid_months_numbers = list(
+            Payment.objects.filter(member=member, year=current_year, status="approved")
+            .values_list("month", flat=True)
+        )
+        total_paid = member.total_approved_payments
+        paid_list = [calendar.month_abbr[int(m)] for m in paid_months_numbers if m]
+        unpaid_list = [
+            calendar.month_abbr[int(m)]
+            for m in months_to_check
+            if m not in paid_months_numbers
+        ]
+
+        # --- Meeting attendance ---
+        attendance_dict = {
+            a.meeting_id: a
+            for a in Attendance.objects.filter(member=member, meeting__in=all_meetings)
+        }
+
         row_cells = table.add_row().cells
-        row_cells[0].text = f"{member.first_name} {member.last_name}"
-        row_cells[1].text = f"${member.total_approved_payments}"
-        row_cells[2].text = str(member.phone_number)
+
+        # Column 0: Member Name
+        p0 = row_cells[0].paragraphs[0]
+        run = p0.add_run(f"{member.first_name} {member.last_name}")
+        run.bold = True
+        run.font.size = Pt(9)
+
+        # Column 1: Payment Status
+        p1 = row_cells[1].paragraphs[0]
+        r_total = p1.add_run(f"Total Paid: ${total_paid}\n")
+        r_total.bold = True
+        r_total.font.size = Pt(9)
+        if member.is_exempt_from_paying:
+            r_ex = p1.add_run("(Exempt from payments)")
+            r_ex.italic = True
+            r_ex.font.size = Pt(9)
+        else:
+            if paid_list:
+                r_paid = p1.add_run(f"\u2714 Paid: {', '.join(paid_list)}\n")
+                r_paid.font.color.rgb = RGBColor(0x27, 0xAE, 0x60)
+                r_paid.font.size = Pt(9)
+            if unpaid_list:
+                r_owing = p1.add_run(f"\u2718 Owing: {', '.join(unpaid_list)}")
+                r_owing.font.color.rgb = RGBColor(0xE7, 0x4C, 0x3C)
+                r_owing.font.size = Pt(9)
+
+        # Column 2: Meeting Breakdown
+        p2 = row_cells[2].paragraphs[0]
+        if not all_meetings:
+            p2.add_run("No sessions recorded.").font.size = Pt(9)
+        else:
+            for i, meeting in enumerate(all_meetings):
+                topic = meeting.topic.title if meeting.topic else "No Topic"
+                date_str = meeting.date.strftime("%b %d, %Y")
+                record = attendance_dict.get(meeting.id)
+
+                r_topic = p2.add_run(f"{topic} ({date_str}): ")
+                r_topic.bold = True
+                r_topic.font.size = Pt(9)
+
+                if record:
+                    if record.mode == "absent":
+                        r_status = p2.add_run("Absent")
+                        r_status.font.color.rgb = RGBColor(0xE7, 0x4C, 0x3C)
+                    else:
+                        r_status = p2.add_run(record.get_mode_display())
+                        r_status.font.color.rgb = RGBColor(0x27, 0xAE, 0x60)
+                else:
+                    r_status = p2.add_run("Not Marked")
+                    r_status.font.color.rgb = RGBColor(0xE6, 0x7E, 0x22)
+
+                r_status.font.size = Pt(9)
+                if i < len(all_meetings) - 1:
+                    p2.add_run("\n").font.size = Pt(9)
 
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
-    response["Content-Disposition"] = 'attachment; filename="Roots_Status_Summary.docx"'
+    response["Content-Disposition"] = (
+        f'attachment; filename="{active_group.name}_Status_Summary.docx"'
+    )
     document.save(response)
-
     return response
 
 

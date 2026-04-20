@@ -184,13 +184,33 @@ class Payment(models.Model):
         help_text="Bank reference, EcoCash transaction ID, or receipt number",
     )
 
+    def _compute_receipt_hash(self):
+        hasher = hashlib.sha256()
+        self.receipt_image.open("rb")
+        try:
+            for chunk in self.receipt_image.chunks():
+                hasher.update(chunk)
+        finally:
+            self.receipt_image.close()
+        return hasher.hexdigest()
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.receipt_image and not self.receipt_hash:
+            computed = self._compute_receipt_hash()
+            duplicate = Payment.objects.filter(receipt_hash=computed).exclude(pk=self.pk).first()
+            if duplicate:
+                raise ValidationError(
+                    f"This receipt image has already been uploaded for "
+                    f"{duplicate.member} ({duplicate.get_month_display()} {duplicate.year})."
+                )
+            self.receipt_hash = computed
+
     def save(self, *args, **kwargs):
         # Only calculate the hash if there is an image and it hasn't been hashed yet
         if self.receipt_image and not self.receipt_hash:
-            hasher = hashlib.sha256()
-            for chunk in self.receipt_image.chunks():
-                hasher.update(chunk)
-            self.receipt_hash = hasher.hexdigest()
+            self.receipt_hash = self._compute_receipt_hash()
 
         super().save(*args, **kwargs)
 
